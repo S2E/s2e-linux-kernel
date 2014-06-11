@@ -403,6 +403,11 @@ config DEBUG_KERNEL
 	  Say Y here if you are developing drivers or trying to debug and
 	  identify kernel problems.
 
+config DEBUG_S2E
+    bool "S2E debugging"
+    help
+      Say Y here if you are trying to debug the S2E Linux monitor.
+
 menu "Memory Debugging"
 
 source mm/Kconfig.debug

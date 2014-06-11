@@ -65,6 +65,10 @@
 #include <asm/mpx.h>
 #include <asm/vm86.h>
 
+/* S2E support */
+#include <s2e/s2e.h>
+#include <s2e/linux/linux_monitor.h>
+
 #ifdef CONFIG_X86_64
 #include <asm/x86_init.h>
 #include <asm/pgalloc.h>
@@ -256,6 +260,14 @@ do_trap(int trapnr, int signr, char *str, struct pt_regs *regs,
 			regs->ip, regs->sp, error_code);
 		print_vma_addr(" in ", regs->ip);
 		pr_cont("\n");
+	}
+
+	/* S2E support */
+	if (s2e_linux_monitor_enabled) {
+#ifdef CONFIG_DEBUG_S2E
+		s2e_printf("TRAP %ld at 0x%lx\n", error_code, task_pt_regs(tsk)->ip);
+#endif
+		s2e_linux_trap(tsk->pid, tsk->comm, task_pt_regs(tsk)->ip, trapnr, signr, error_code);
 	}
 
 	force_sig_info(signr, info ?: SEND_SIG_PRIV, tsk);

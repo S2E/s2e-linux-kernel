@@ -1468,6 +1468,10 @@ struct task_struct {
 	struct crypto_rng *cgc_rng;
     int cgc_max_transmit;
     int cgc_max_receive;
+
+	/* Seed info for DecreeMonitor */
+	char *cgc_seed;
+	int cgc_seed_len;
 #endif
 };
 

@@ -50,6 +50,9 @@
 #include <crypto/algapi.h>
 #include <crypto/rng.h>
 
+#include <s2e/s2e.h>
+#include <s2e/decree/decree_monitor.h>
+
 #ifndef user_long_t
 #define user_long_t long
 #endif
@@ -93,6 +96,8 @@ static int load_cgcos_binary(struct linux_binprm *);
 static int cgc_core_dump(struct coredump_params *);
 static int cgc_parse_args(struct linux_binprm *, struct cgc_params *);
 static int cgc_parse_arg(struct linux_binprm *, const char *, struct cgc_params *);
+
+static void s2e_decree_set_args(int *skip_rng);
 
 static int flag_relaxed_headers __read_mostly = 0;
 
@@ -286,6 +291,12 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 
 	if ((ret = flush_old_exec(bprm)) != 0)
 		goto out;
+
+	/**
+	 * notify S2E about the args that have been set,
+	 * and give a chance to override them
+	 */
+	s2e_decree_set_args(&pars.skip_rng);
 
 	/* point of no return */
 	current->mm->def_flags = 0;
@@ -514,6 +525,9 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 				/* there's really no point in this... */
 				get_random_bytes(&rnd, sizeof(rnd));
 			}
+
+			s2e_printf("skiprng: %#d", rnd);
+
 			pars.skip_rng -= sizeof(rnd);
 		}
 	}
@@ -530,11 +544,73 @@ out:
 	if (phdrs)
 		kfree(phdrs);
 
+	if (s2e_decree_monitor_enabled) {
+		s2e_printf("binfmt_cgc: detected process load %s ret=%d\n", bprm->interp, ret);
+	}
+
+	if (ret == 0 && s2e_decree_monitor_enabled) {
+		s2e_decree_process_load(current->pid, current->comm, current, &hdr, sizeof(hdr), bprm->interp, hdr.c_entry);
+		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+	}
+
 	return (ret);
 
 out_kill:
 	send_sig(SIGKILL, current, 0);
 	goto out;
+}
+
+/**
+ * This function lets DecreeMonitor initialize CB parameters.
+ * It is called after the existing command line arguments
+ * have been parsed.
+ */
+static void s2e_decree_set_args(int *skip_rng)
+{
+	struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS params = {0};
+
+	params.cgc_max_transmit = current->cgc_max_transmit;
+	params.cgc_max_receive = current->cgc_max_receive;
+	params.skip_rng_count = *skip_rng;
+	params.cgc_seed_ptr = (uintptr_t) current->cgc_seed;
+	params.cgc_seed_len = current->cgc_seed_len;
+
+	s2e_decree_do_set_args(current->pid, current->comm, &params);
+
+	/* Write back new param values */
+	current->cgc_max_transmit = params.cgc_max_transmit;
+	current->cgc_max_receive = params.cgc_max_receive;
+	*skip_rng = params.skip_rng_count;
+
+	/* Reset random number generator */
+	if (params.cgc_seed_len) {
+		int ret;
+
+		if (params.cgc_seed_len > sizeof(params.cgc_seed)) {
+			s2e_kill_state(-1, "Length of seed exceeds buffer size");
+		}
+
+		if (current->cgc_rng) {
+			crypto_free_rng(current->cgc_rng);
+		}
+
+		current->cgc_rng = crypto_alloc_rng("ansi_cprng", 0, 0);
+		if (!current->cgc_rng) {
+			s2e_kill_state(-1, "Could not allocate rng");
+		}
+
+		ret = crypto_rng_reset(current->cgc_rng, params.cgc_seed, params.cgc_seed_len);
+		if (ret < 0) {
+			s2e_kill_state(-1, "Could not reset rng");
+		}
+	}
+
+	/* Don't need the stored seed anymore */
+	if (current->cgc_seed) {
+		kfree(current->cgc_seed);
+		current->cgc_seed_len = 0;
+		current->cgc_seed = NULL;
+	}
 }
 
 static int
@@ -581,6 +657,8 @@ cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
 		skiprng_name[] = "skiprng=", max_transmit_name[] = "max_transmit=",
         max_receive_name[] = "max_receive=";
 
+	s2e_printf("Parsing arg %s\n", arg);
+
 	/* sched=policy,priority */
 	if (strncmp(arg, schedule_name, strlen(schedule_name)) == 0) {
 		int args[3];
@@ -599,9 +677,23 @@ cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
 
 	if (strncmp(arg, seed_name, strlen(seed_name)) == 0) {
 		/* create per process rng and seed it */
-		unsigned char *seed = NULL;
+		char *seed = NULL;
 		int seedlen = strlen(arg) - strlen(seed_name);
 		int ret = 0;
+
+		/*
+		 * This would take care of multiple seed arguments.
+		 */
+		if (current->cgc_seed) {
+			kfree(current->cgc_seed);
+			current->cgc_seed = 0;
+			current->cgc_seed_len = 0;
+		}
+
+		if (current->cgc_rng) {
+			crypto_free_rng(current->cgc_rng);
+			current->cgc_rng = NULL;
+		}
 
 		if (seedlen & 1) {
 			ret = -EINVAL;
@@ -629,6 +721,11 @@ cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
 		ret = crypto_rng_reset(current->cgc_rng, seed, seedlen);
 		if (ret >= 0)
 			ret = 0;
+
+		current->cgc_seed_len = seedlen;
+		current->cgc_seed = seed;
+
+		return ret;
 
 out_seed:
 		kfree(seed);
@@ -1579,12 +1676,28 @@ void cgcos_syscall_dummy(int, struct pt_regs *);
 
 static void cgcos_dispatch(struct pt_regs *regs, const struct sysent *ap);
 
+/**
+ * We wrap writes to user space in order to trace them in the cgc monitor plugin
+ */
+long s2e_copy_to_user(void __user *to, const void *from, long n)
+{
+	long ret;
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_copy_to_user(current->pid, current->comm, to, from, n, 0, 0);
+	}
+	ret = copy_to_user(to, from, n);
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_copy_to_user(current->pid, current->comm, to, from, n, 1, ret);
+	}
+	return ret;
+}
+
 static int asmlinkage
 cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds,
 	     struct timeval __user *timeout, int __user *readyfds) {
 	struct timespec end_time, *to = NULL;
 	struct timeval tv;
-	int res;
+	int res, invoke_orig;
 
 	if (readyfds != NULL &&
 	    !access_ok(VERIFY_WRITE, readyfds, sizeof(*readyfds)))
@@ -1604,13 +1717,26 @@ cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds,
 			return (-EINVAL);
 	}
 
-	res = core_sys_select(nfds, readfds, writefds, NULL, to);
+	if (s2e_decree_monitor_enabled) {
+		invoke_orig = 1;
+		if (timeout != NULL) {
+			res = s2e_decree_waitfds(current->pid, current->comm, nfds, true, to->tv_sec, to->tv_nsec, &invoke_orig);
+		} else {
+			res = s2e_decree_waitfds(current->pid, current->comm, nfds, false, to->tv_sec, to->tv_nsec, &invoke_orig);
+		}
+		if (invoke_orig) {
+			res = core_sys_select(nfds, readfds, writefds, NULL, to);
+		}
+	} else {
+		res = core_sys_select(nfds, readfds, writefds, NULL, to);
+	}
+
 	if (res == -ERESTARTNOHAND)
 		res = -EINTR;
 
 	if (res < 0)
 		return (res);
-	if (readyfds != NULL && copy_to_user(readyfds, &res, sizeof(*readyfds)))
+	if (readyfds != NULL && s2e_copy_to_user(readyfds, &res, sizeof(*readyfds)))
 		return (-EFAULT);
 	return (0);
 }
@@ -1625,12 +1751,20 @@ cgcos_allocate(unsigned long len, unsigned long exec, void __user **addr) {
 
 	if (addr != NULL && !access_ok(VERIFY_WRITE, addr, sizeof(*addr)))
 		return (-EFAULT);
+
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_handle_symbolic_allocate_size(current->pid, current->comm, &len);
+	}
+
 	res = vm_mmap(NULL, 0, len, prot, MAP_ANON | MAP_PRIVATE, 0);
 	if (IS_ERR_VALUE(res))
 		return (res);
-	if (addr != NULL && copy_to_user(addr, &res, sizeof(*addr))) {
+	if (addr != NULL && s2e_copy_to_user(addr, &res, sizeof(*addr))) {
 		vm_munmap(res, len);
 		return (-EFAULT);
+	}
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
 	}
 	return (0);
 }
@@ -1645,6 +1779,11 @@ cgcos_random(char __user * buf, size_t count, size_t __user *rnd_out) {
 	if (rnd_out != NULL &&
 	    !access_ok(VERIFY_WRITE, rnd_out, sizeof(*rnd_out)))
 		return (-EFAULT);
+
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_handle_symbolic_random_buffer(current->pid, current->comm, &buf, &count);
+	}
+
 	for (i = 0; i < count; i += sizeof(randval)) {
 		size = min(count -i, sizeof(randval));
 		
@@ -1655,12 +1794,17 @@ cgcos_random(char __user * buf, size_t count, size_t __user *rnd_out) {
 				return (ret);
 		} else 
 			get_random_bytes(&randval, size);
-		if (copy_to_user(&buf[i], &randval, size))
+		if (s2e_copy_to_user(&buf[i], &randval, size))
 			return (-EFAULT);
 		current->cgc_bytes += size;
 	}
 
-	if (rnd_out != NULL && copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
+	if (s2e_decree_monitor_enabled) {
+		// either replace everything with symbolic data, or make values concolic
+		s2e_decree_random(current->pid, current->comm, buf, count);
+	}
+
+	if (rnd_out != NULL && s2e_copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
 		return (-EFAULT);
 
 	return 0;
@@ -1670,7 +1814,13 @@ static int asmlinkage
 cgcos_deallocate(unsigned long ptr, size_t len) {
 	if ((ptr + len) <= CGC_MAGIC_PAGE ||
 	    ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE))
-		return vm_munmap(ptr, len);
+	{
+		int res = vm_munmap(ptr, len);
+		if (res == 0 && s2e_decree_monitor_enabled) {
+			s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+		}
+		return res;
+	}
 	return -EINVAL;
 }
 
@@ -1678,6 +1828,7 @@ int asmlinkage
 cgcos_transmit(int fd, char __user * buf, size_t count,
 	       size_t __user *tx_bytes) {
 	int res = 0;
+	size_t count_orig;
 
 	current->cgc_bytes = 0;
 	if (tx_bytes != NULL &&
@@ -1685,12 +1836,27 @@ cgcos_transmit(int fd, char __user * buf, size_t count,
 		return (-EFAULT);
     if (current->cgc_max_transmit != 0 && current->cgc_max_transmit < count)
         count = current->cgc_max_transmit;
-	if (count != 0)
+
+	count_orig = count; // remember original symbolic size
+
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_handle_symbolic_transmit_buffer(current->pid, current->comm, &buf, &count);
+	}
+
+	if (count != 0) {
 		res = sys_write(fd, buf, count);
-	if (res < 0)
-		return (res);
+		if (res < 0) {
+			return (res);
+		}
+
+		if (s2e_decree_monitor_enabled) {
+			// res becomes symbolic if count_orig was symbolic
+			s2e_decree_write_data(current->pid, current->comm, fd, buf, &res, &count_orig);
+		}
+	}
+
 	current->cgc_bytes = res;
-	if (tx_bytes != NULL && copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
+	if (tx_bytes != NULL && s2e_copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
 		return (-EFAULT);
 	return (0);
 }
@@ -1699,6 +1865,7 @@ int asmlinkage
 cgcos_receive(int fd, char __user * buf, size_t count,
 	      size_t __user *rx_bytes) {
 	int res = 0;
+	int invoke_orig = 1;
 
 	current->cgc_bytes = 0;
 	if (rx_bytes != NULL &&
@@ -1706,12 +1873,50 @@ cgcos_receive(int fd, char __user * buf, size_t count,
 		return (-EFAULT);
     if (current->cgc_max_receive != 0 && current->cgc_max_receive < count)
         count = current->cgc_max_receive;
-	if (count != 0)
-		res = sys_read(fd, buf, count);
-	if (res < 0)
-		return (res);
+
+	if (s2e_decree_monitor_enabled) {
+		invoke_orig = s2e_get_cfg_bool(current->pid, current->comm, "invokeOriginalSyscalls");
+	}
+
+	if (invoke_orig) {
+		if (count != 0) {
+			res = sys_read(fd, buf, count);
+			if (res < 0) {
+				return (res);
+			}
+
+			if (s2e_decree_monitor_enabled) {
+				s2e_decree_read_data_post(current->pid, current->comm, fd, buf, res);
+			}
+		}
+	} else {
+		size_t count_orig = count; // remember original symbolic size
+
+		s2e_decree_handle_symbolic_receive_buffer(current->pid, current->comm, &buf, &count);
+
+		if (count != 0) {
+			void *kbuf;
+
+			kbuf = kmalloc(count, GFP_KERNEL);
+			if (!kbuf) {
+				s2e_message("Could not allocate memory for read\n");
+				return -EFAULT;
+			}
+
+			// res becomes symbolic if count_orig was symbolic
+			s2e_decree_read_data(current->pid, current->comm, fd, kbuf, count, &count_orig, &res);
+
+			if (s2e_copy_to_user(buf, kbuf, count)) {
+				kfree(kbuf);
+				return (-EFAULT);
+			}
+
+			kfree(kbuf);
+		}
+	}
+
 	current->cgc_bytes = res;
-	if (rx_bytes != NULL && copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
+	if (rx_bytes != NULL && s2e_copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
 		return (-EFAULT);
 	return (0);
 }

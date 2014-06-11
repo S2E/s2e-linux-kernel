@@ -69,6 +69,9 @@
 
 #include "internal.h"
 
+#include <s2e/s2e.h>
+#include <s2e/decree/decree_monitor.h>
+
 #ifdef LAST_CPUPID_NOT_IN_PAGE_FLAGS
 #warning Unfortunate NUMA and NUMA Balancing config, growing page-frame for last_cpupid.
 #endif
@@ -3817,6 +3820,10 @@ int handle_mm_fault(struct mm_struct *mm, struct vm_area_struct *vma,
                  */
                 if (task_in_memcg_oom(current) && !(ret & VM_FAULT_OOM))
                         mem_cgroup_oom_synchronize(false);
+	}
+
+	if (s2e_decree_monitor_enabled && current->personality == PER_CGCOS) {
+		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
 	}
 
 	return ret;
