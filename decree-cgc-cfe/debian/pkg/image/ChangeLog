@@ -1,0 +1,435 @@
+2007-05-04  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (really_reverse_link):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-6
+		  Fix Typographical errors in diagnostics where symlink
+		  and hardlink were swapped. 
+
+	* preinst (check):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-2
+		  Add more verbose explanations when aborting.
+
+2007-03-01  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-10
+		  Don't semi-silently ignore missing hooks. Don't
+		  gracefully handle missing hook scripts, the diagnostic
+		  might be lost in a flurry of messages, and the user may
+		  never be aware that the hook script was never run.
+
+2007-02-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (move_p):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-8
+		  Fix a typo that caused image symlinks to be mishandled. 
+
+2007-02-24  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-6
+		  remove modules.seriomap as well.
+
+2007-01-17  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-1
+		  In kernel/pkg/image/p* the link_in_boot variable is set
+		  by incorrectly checking for image_in_boot from the
+		  config file. This was an out-and-out cut and paste
+		  error; and the fix is very simple 
+
+	* preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-1
+		  Ditto.
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-1
+		  Ditto.
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-1
+		  Ditto.
+
+
+2006-10-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-199
+		  Cleanup after update-initramfs by also removing  initrd
+		  backup files for now, even though we did not create them.
+
+2006-10-23  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-195
+		  Run the boot loader _after_ the postinst hooks have been
+		  run 
+
+2006-09-29  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (handle_non_symlinks):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-189
+		  Fix a typo in determining the relative path for
+		  images. Also, in several places, handle a special case
+		  when the source and destination directories are
+		  identical, and use a relative link there.  This might
+		  help the folks using a separate /boot and link_in_boot
+		  options.
+
+2006-09-24  Manoj Srivastava  <srivasta@debian.org>
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-187
+		  Fix faulty check for changing a running kernel 
+
+2006-09-13  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-185
+		  Don't look to see if the postrm hook script is
+		  executable, search path first
+
+2006-09-06  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-183
+		  Add a new variable, warn_reboot, which controls if a
+		  warning to reboot is issued.
+
+	* preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-183
+		  Ditto. 
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-183
+			  Ditto.  
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-183
+			  Ditto.  
+
+2006-08-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (run_lilo):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-176
+		  Change the name of the bootloader selection question,
+		  since now it is a shared question, though we do try to
+		  ensure it is asked every time. 
+
+2006-08-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Added a new function to allow running of hook scripts
+		  with the proper sanity checks and diagnostics.  
+	  (exec_script):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Support function for run_hook. 
+
+	* prerm (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Ditto. 
+
+	* preinst (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Ditto. 
+
+	* postinst (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Ditto. 
+	  (run_lilo):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  The default behaviour of the  postinst script has been
+		  to run the built in default bootloader  (typically lilo)
+		  -- set at compile time, based on the arch. The
+		  installed default for Debian, however, has since moved
+		  on to be  configuration variable in /etc/kernel-img.conf
+		  --and may still have  lilo installed. The trick is to
+		  figure out whether they really want to  ruyn lilo. So,
+		  if there is no /etc/lilo.conf, we run nothing. If the
+		  user has explicitly asked to run lilo, we rin lilo. Or
+		  if there is no grub, or if there is no postinst hook
+		  script, we run lilo. Or else, we  ask the user. 
+
+2006-07-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* README:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-166
+			  Update Linus' email address  
+
+	* postrm (remove_sym_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-165
+		  Do not assume that the boot loader is defined. 
+
+2006-06-16  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-158
+		  Do not look for $kimage  when trying to decide is the
+		  initrd symlink is missing. This is the probable cause of
+		  the initrd symlink not being updated in corner cases.  
+
+2006-04-20  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-146
+		  Account for the possibility that debconf may not be
+		  around at this point. Since we don't use debconf
+		  directly, but make the db available for hook scripts,
+		  we just punt on checking for debconf on to the scripts.
+
+2006-04-12  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (fix_source_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-142
+		  Clarify that it is the link target that we cannot see
+		  the contents of. 
+
+2006-03-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-135
+		  Made the check return strings, instead of a go/no go
+		  boolean. Now this check is advisory. No check on
+		  official kernel images. Check for the kernel modules dir
+		  only. 
+
+2006-03-21  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (run_lilo):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-131
+		  Typo in debconf substitution. The variable is loader,
+		  not locader 
+
+2006-01-03  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-107
+		  Now, we try all viable initramfs generators, one after
+		  the other, until we find one that works, and only die if
+		  all  the available initramfs tools have failed. 
+
+2005-12-31  Manoj Srivastava  <srivasta@debian.org>
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-106
+			  set the env var stem before calling hooks  
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-106
+		  set the env var stem before calling hooks 
+
+	* postrm (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-106
+		  set the env var stem before calling hooks 
+
+	* postinst (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-106
+		  set the env var stem before calling hooks
+
+2005-12-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+		  Removed db_stop, and added some more diagnostics to show
+		  progress. 
+
+	* postrm (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-95
+		  Ditto.
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-101
+		  Ditto.
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-101
+		  Ditto.  
+
+2005-12-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+			  In the recent 10.X series, kernel package has
+			  started producing image packages whose
+			  maintainer scripts use debconf for user
+			  interaction. Unfortunately, this meant that any
+			  hook scripts called in the maintainer scripts
+			  for the image package (update-grub comes to
+			  mind), if they wrote anything at all to the
+			  STDout, would cause debconf to throw hissy fits,
+			  since it was expecting commands on STDOUT, not
+			  random chatter from the hook scripts.  
+
+			  One solution was to call db_stop before calling
+			  the hook scripts, and redirecting stdout
+			  to stderr in hte invocation of the
+			  scripts. Unfortunately, this made any
+			  scripts that used debconf impossible. 
+
+			So, either we ban scripts that are interactive, or
+			scripts that scribble on stdout.  Since
+			the former makes some functionality
+			impossible (some scripts can delicer added
+			functionality and flexibility of they can
+			interact with users), and the latter just
+			needs a code change, I would prefer to ask
+			packages that provide scripts to be used
+			in kernel image postinst/postrm to use
+			debconf for user interaction, and to send
+			diagnostics to STDERR. 
+
+	* preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+		  Do not call db_stop before calling hook scripts,
+		  allowing them to use debconf. 
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-95
+		  Do not call db_stop before calling hook scripts,
+		  allowing them to use debconf. 
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+		  Do not call db_stop before calling hook scripts,
+		  allowing them to use debconf. 
+
+2005-12-23  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-95
+			  Fix postrm issues with stop() make sure that
+			  debconf version is still 2.0, and ask for
+			  capabilities. Maybe this shall enable us to
+			  reliably call  stop() later  
+
+2005-12-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+			  do not redirect stdout for scripts that have to
+			  be called in the hooks.  
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+		  do not redirect stdout for scripts that have to be
+		  called in the hooks. 
+
+	* postrm (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-90
+		  do not redirect stdout for scripts that have to be
+		  called in the hooks. 
+
+	* postinst (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-93
+		  do not redirect stdout for  scripts that have to be
+		  called in the hooks. 
+
+2005-12-21  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-90
+			  Added modules.ofmap to @files_to_remove
+
+2005-12-11  Manoj Srivastava  <srivasta@debian.org>
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-86
+			  When done with debconf, call stop: this shall
+			  help prevent errors if the hook scripts write to
+			  stdout. Also, when calling the hook scripts,
+			  redirect stdout to stderr, just in case -- and
+			  to ensure that the messages do not silently
+			  disappear.  
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-86
+		  Ditto 
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-86
+		  Ditto. 
+
+	* preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-86
+		  Ditto 
+
+
+2005-11-08  Manoj Srivastava  <srivasta@debian.org>
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  Call purge to remove the questions from debconf
+		  database when the package is purged.  
+
+2005-11-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* copyright (ftp):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-61
+		  Fixed FSF address 
+
+2005-11-06  Manoj Srivastava  <srivasta@debian.org>
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  Use debconf to ask questions.  
+		  Removed a bunch of obsolete variables.
+		  One of the questions now asked using debconf is the one
+		  when we are trying to remove the kernel version
+		  we are running, the other is the question asked if we
+		  have a valid entry for the version being removed in the
+		  boot loader configuration. 
+
+2005-11-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  Fix link manipulation when reinstalled after
+		  removal. The problem was that while the symbolic links
+		  were removed when the package was removed, dpkg passed
+		  the last-version-configured to the postinst, and we took
+		  that as evidence that the package had been installed
+		  before. The fix is to always see if a missing symlink
+		  needs to be installed, and not touch existing symlinks. 
+
+2005-11-03  Manoj Srivastava  <srivasta@debian.org>
+
+	* config:  New file. This contains all the questions, usually
+		  acted upon during the postinst, that can be asked before
+		  the package is unpacked.  
+
+	* prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  Added variable $package_name  
+
+	* preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  This is the other file to have undergone
+		  debconfication. All the questions asked are still here
+		  -- we just use debconf to ask the user. Also, the
+		  priority, and need to brak non-interactive installs was
+		  re-evaluated, and the preinst breaks in far fewer cases
+		  than it did before. 
+
+	* postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  Added variable $package_name  
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  This file has been greatly changed. Firstly, it uses
+		  debconf; and gets rid of the code that generated boot
+		  floppies and created lilo.conf (that latter was probably
+		  illegal under current policy anyway.)A number of
+		  questions have been moved to the config file
+		  (create-kimage-link-$version, old-initrd-link,
+		  old-dir-initrd-link,  old-system-map-link) while others
+		  are asked conditionally in the  postinst (depmod-error,
+		  depmod-error-initrd, bootloader-test-error,
+		  bootloader-error). The postinst has also become far less
+		  verbose; the  users are far better educated a decade
+		  after this was written, and there are other sources of
+		  information about booting than the postinst of a kernel
+		  image. 
+

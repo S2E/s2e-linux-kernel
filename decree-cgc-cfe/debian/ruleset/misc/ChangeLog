@@ -1,0 +1,270 @@
+2007-11-30  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk:
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-13
+		  use DEB_HOST_ARCH_OS, not DEB_HOST_GNU_SYSTEM
+
+	* modules.mk:
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-13
+		  use DEB_HOST_ARCH_OS, not DEB_HOST_GNU_SYSTEM
+
+	* defaults.mk:
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-13
+		  use DEB_HOST_ARCH_OS, not DEB_HOST_GNU_SYSTEM
+
+2007-05-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk (GIT_VERSION):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-11
+		  If CONFIG_LOCALVERSION_AUTO is set, see if we are
+		  running in a git tree. If so, append -dirty to the git
+		  version string.
+	  (version):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-11
+		  Append git version string
+
+2007-03-01  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-11
+		  For powerpc, handle circular dependency of version
+		  number and KERNEL_ARCH. For powerpc, we need to set the
+		  (KERNEL_ARCH) based on the version numbers -- which we
+		  can't get to unless we know the kernel
+		  architecture. Yossarian would have liked this. Use grep
+		  to get the most significant digits of the version
+		  number. Use these to calculate significant digits of the
+		  version number. Use these to calculate the
+		  KERNEL_ARCH. Use KERNEL_ARCH to get to the full version.
+
+2006-10-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk (TEST):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-198
+		  Fixed invocation of version determining code; now we
+		  ignore the warning the kernel makefile dumps to stdout
+		  when the .config needs recompiling.
+
+2006-10-01  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk (LOCALVERSION):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-192
+		  Fix the invocation of make for real this time, when
+		  KERNEL_ARCH is unset.
+
+2006-09-30  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk (TEST):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-189
+		  Only pass ARCH if KERNEL_ARCH is not empty. 
+
+2006-09-29  Manoj Srivastava  <srivasta@debian.org>
+
+	* initrd.mk (initrddep):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-189
+		  Fix typo in yaird version number.  We want >= 0.0.11,
+		  not 0.1.11.
+
+	* version_vars.mk (TEST):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-189
+		  Add an dummy call to make, if there are problems in the
+		  .config, kbuild rewrites  .config, and the informational
+		  message messes up the VERSION variable. If the variable
+		  TEST did get a mesage about .config being written, pass
+		  it on. 
+		  (LOCALVERSION):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-189
+			  Pass KERNEL_ARCH along to the make calls for
+			  version numbers
+
+2006-08-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* initrd.mk (initrddep):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-177
+		  revert the dependency order  of yaird vs
+		  initramfs-tools, since we changed the default initrd
+		  generator.  
+
+2006-07-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk (UTS_RELEASE_HEADER):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-168
+		  New variable, added since the kernel build system added
+		  a new file include/linux/utsrelease.h  
+
+2006-06-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* pkg_names.mk (UML_DIR):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-154
+		  The new rootstrap can automatically install UML modules
+		  at build time, as long as the installation directory is
+		  compatible. This makes it so. 
+
+2006-04-12  Manoj Srivastava  <srivasta@debian.org>
+
+	* pkg_names.mk (i_package):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-142
+		  Modify the names of the Xen image packages based on type
+		  of xen image being built. 
+
+2006-03-29  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-141
+		  Also track .kernelrelease. 
+
+2006-03-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* defaults.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-138
+		  Set the CROSS_ARG from KERNEL_CROSS, keeping in mind
+		  that a bare "-" means an empty string. 
+
+2006-02-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* pkg_names.mk (KPKG_DEST_DIR):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-126
+		  Use DEB_DEST 
+
+	* version_vars.mk (localversion_files):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-123
+		  Define localversion_files 
+
+	* defaults.mk (DEBIAN_FILES):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-122
+		  Add rules to the default files we copy over. 
+
+2006-02-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* kernel_arch.mk: This file is here to localize the various over
+		  rides of architecture required to match the arch name
+		  dpkg-architecture determines and what the kernel folks
+		  call that platform. 
+
+	* defaults.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-118
+		  Move the over the over rides of kernel arch to a separate
+		  file. This is needed when we need to match
+		  what DEB_HOST_ARCH_CPU says this platform is and what the
+		  kernel folks call that platform.  
+
+2006-01-28  Manoj Srivastava  <srivasta@debian.org>
+
+	* defaults.mk (KERNEL_ARCH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-115
+		  Apparently, what DEB_HOST_ARCH_CPU calls mipsel is still
+		  mips according to the  kernel. Added code to set the
+		  KERNEL_ARCH -- this is mostly for clean, anyway.  
+
+2006-01-03  Manoj Srivastava  <srivasta@debian.org>
+
+	* config.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-109
+		  Added the calculation of $(debian) here, since it is
+		  included _after_ the config file is. 
+
+	* version_vars.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-107
+		  Removed the calculation of $(debian) from this file,
+		  since this is included before the config file is
+		  included, so the latter always over rides the setting of
+		  the debian revision on the command line. 
+
+2005-12-27  Manoj Srivastava  <srivasta@debian.org>
+
+	* defaults.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-91
+		  removed special casing of powerpc64 when determining
+		  whether or not we are cross compiling. 
+
+2005-12-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* defaults.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-91
+		  Let the architecture still be whatever DEB_HOST_ARCH_CPU
+		  says it should be. Just set KERNEL_ARCH correctly on
+		  amd64/x86_64 machines. 
+
+2005-12-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* defaults.mk (architecture):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-91
+		  well, on amd64 boxes,  DEB_HOST_ARCH_CPU does not match
+		  what the kernel calls this  architecture. However,
+		  DEB_HOST_GNU_CPU does. Anyway, if we find the
+		  architecture is being called amd64, we revert it to the
+		  kernel  nomenclature of x86_64 
+
+2005-12-03  Manoj Srivastava  <srivasta@debian.org>
+
+	* checks.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-74
+		  It was pointed out to me that the ability to build third
+		  party modules using make-kpkg and linux kernel headers
+		  packages had broken with recent kernel packages, since
+		  the check for whether we were in a top level kernel
+		  source directory failed to take into account if we were
+		  in a header package directory, which is sufficient.
+
+2005-11-08  Manoj Srivastava  <srivasta@debian.org>
+
+	* README: No longer mention FLAVOURS, since that is now gone.
+
+2005-11-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* config.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-64
+		  Removed the debian version calculation from here. 
+
+	* version_vars.mk (debian):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-64
+			  Moved the calculation of the version number
+			  here. It really is both the upstream and the
+			  debian revision, despite the name. The default
+			  is now $(version)-10.00.Custom 
+
+2005-11-02  Manoj Srivastava  <srivasta@debian.org>
+
+	* version_vars.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  This file looks at the top level kernel Makefile, and
+		  extracts the components of the version string. It uses
+		  the kernel Makefile itself, so it takes into account
+		  everything the kernel Makefile itrself pays attention
+		  to. This file also calculated the obsolete Debian
+		  specific Flavour variable. 
+
+	* patches.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  This file deals with setting up variables, looking at
+		  directories, and creating a list of valid third party
+		  patches available for the kernel being built. 
+
+	* modules.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  This file deals with setting up variables, looking at
+		  directories, and creating a list of valid third party
+		  modules available for the kernel being built. 
+
+	* initrd.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  This snippet uses hard coded version based heuristics to
+		  determine which set of tools would be viable for
+		  providing an initrd or initramdisk for the kernel being
+		  built, if initrd's are selected by the user as desired. 
+
+	* defaults.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  This file sets default values for  variables _before_
+		  the user configuration files are read. 
+
+	* config.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Various internal variable set based on defaults and the
+		  user configuration files, or from environment vars. 
+
+	* checks.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Various checks that would let the build process detect
+		  and abort on various error conditions. 
+

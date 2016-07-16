@@ -1,0 +1,33 @@
+#! /bin/sh
+
+set -e
+
+if [ -n "$INITRD" ] && [ "$INITRD" = 'No' ]; then
+    exit 0
+fi
+version="$1"
+vmlinuz_location="$2"
+
+
+if [ -n "$DEB_MAINT_PARAMS" ]; then
+    eval set -- "$DEB_MAINT_PARAMS"
+    if [ -z "$1" ] || [ "$1" != "configure" ]; then
+        exit 0;
+    fi
+fi
+
+# passing the kernel version is required
+[ -z "$version" ] && exit 1
+
+
+if [  -n "$vmlinuz_location" ]; then
+    # Where is the image located? We'll place the initrd there.
+    boot=$(dirname "$vmlinuz_location")
+    bootarg="-b $boot"
+fi
+
+# 
+if which update-initramfs >/dev/null ; then
+    update-initramfs -c -t -k "$version" $bootarg
+fi
+

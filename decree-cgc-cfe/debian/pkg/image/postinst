@@ -1,0 +1,395 @@
+#! /usr/bin/perl
+#                              -*- Mode: Cperl -*-
+# debian.postinst ---
+# Author           : Manoj Srivastava ( srivasta@pilgrim.umass.edu )
+# Created On       : Sat Apr 27 05:55:26 1996
+# Created On Node  : melkor.pilgrim.umass.edu
+# Last Modified By : Manoj Srivastava
+# Last Modified On : Mon Apr 13 14:24:43 2009
+# Last Machine Used: anzu.internal.golden-gryphon.com
+# Update Count     : 362
+# Status           : Unknown, Use with caution!
+# HISTORY          :
+# Description      :
+#
+#    $Id: image.postinst,v 1.125 2003/10/07 16:24:20 srivasta Exp $
+#
+
+#
+#use strict; #for debugging
+use Cwd 'abs_path';
+use Debconf::Client::ConfModule qw(:all);
+version('2.0');
+my $capb=capb("backup");
+
+$|=1;
+
+# Predefined values:
+my $version            = "=V";
+my $move_image         = '';     # target machine defined
+my $kimage             = "=K";   # Should be empty, mostly
+my $image_dir          = "=D";        # where the image is located
+my $clobber_modules    = '';          # target machine defined
+my $initrd             = "=I";        # initrd kernel
+my $postinst_hook      = '';          #Normally we do not
+my $postrm_hook        = '';          #Normally we do not
+my $preinst_hook       = '';          #Normally we do not
+my $prerm_hook         = '';          #Normally we do not
+my $ignore_depmod_err  = '';          # normally we do not
+my $relink_src_link    = 'YES'; # There is no harm in checking the link
+my $relink_build_link  = 'YES'; # There is no harm in checking the link
+my $force_build_link   = '';    # There is no harm in checking the link
+my $arch               = "=A"; #  should be same as dpkg --print-installation-architecture
+my $kernel_arch        = "=B";
+my $package_name       = "=ST-image-$version";
+my $kernel_pkg_version = "=KPV";
+
+#known variables
+my $image_dest      = "/";
+my $realimageloc    = "/$image_dir/";
+my $have_conffile   = "";
+my $silent_modules  = '';
+my $warn_reboot     = 'Yes';     # Warn that we are installing a version of
+                                 # the kernel we are running
+
+my $modules_base    = '/lib/modules';
+my $CONF_LOC        = '/etc/kernel-img.conf';
+
+# Ignore all invocations except when called on to configure.
+exit 0 unless $ARGV[0] =~ /configure/;
+
+my $DEBUG = 0;
+
+# Do some preliminary sanity checks here to ensure we actually have an
+# valid image dir
+chdir('/')           or die "could not chdir to /:$!\n";
+die "Internal Error: ($image_dir) is not a directory!\n"
+  unless -d $image_dir;
+
+# remove multiple leading slashes; make sure there is at least one.
+$realimageloc  =~ s|^/*|/|o;
+$realimageloc  =~ s|/+|/|o;
+die "Internal Error: ($realimageloc) is not a directory!\n"
+  unless -d $realimageloc;
+
+if (-r "$CONF_LOC" && -f "$CONF_LOC"  ) {
+  if (open(CONF, "$CONF_LOC")) {
+    while (<CONF>) {
+      chomp;
+      s/\#.*$//g;
+      next if /^\s*$/;
+
+      $move_image        = "" if m/^\s*move_image\s*=\s*(no|false|0)\s*$/i;
+      $clobber_modules   = '' if m/^\s*clobber_modules\s*=\s*(no|false|0)\s*$/i;
+      $silent_modules    = '' if m/^\s*silent_modules\s*=\s*(no|false|0)\s*$/i;
+      $warn_reboot       = '' if m/^\s*warn_reboot\s*=\s*(no|false|0)\s*$/i;
+      $ignore_depmod_err = '' if m/^\s*ignore_depmod_err\s*=\s*(no|false|0)\s*$/i;
+      $relink_src_link   = '' if m/^\s*relink_src_link\s*=\s*(no|false|0)\s*$/i;
+      $relink_build_link = '' if m/^\s*relink_build_link\s*=\s*(no|false|0)\s*$/i;
+      $force_build_link  = '' if m/^\s*force_build_link\s*=\s*(no|false|0)\s*$/i;
+
+      $move_image        = "Yes" if m/^\s*move_image\s*=\s*(yes|true|1)\s*$/i;
+      $clobber_modules   = "Yes" if m/^\s*clobber_modules\s*=\s*(yes|true|1)\s*$/i;
+      $silent_modules    = 'Yes' if m/^\s*silent_modules\s*=\s*(yes|true|1)\s*$/i;
+      $warn_reboot       = 'Yes' if m/^\s*warn_reboot\s*=\s*(yes|true|1)\s*$/i;
+      $ignore_depmod_err = 'Yes' if m/^\s*ignore_depmod_err\s*=\s*(yes|true|1)\s*$/i;
+      $relink_src_link   = 'Yes' if m/^\s*relink_src_link\s*=\s*(yes|true|1)\s*$/i;
+      $relink_build_link = 'Yes' if m/^\s*relink_build_link\s*=\s*(yes|true|1)\s*$/i;
+      $force_build_link  = 'Yes' if m/^\s*force_build_link\s*=\s*(yes|true|1)\s*$/i;
+
+      $image_dest    = "$1"  if m/^\s*image_dest\s*=\s*(\S+)/i;
+      $postinst_hook = "$1"  if m/^\s*postinst_hook\s*=\s*(\S+)/i;
+      $postrm_hook   = "$1"  if m/^\s*postrm_hook\s*=\s*(\S+)/i;
+      $preinst_hook  = "$1"  if m/^\s*preinst_hook\s*=\s*(\S+)/i;
+      $prerm_hook    = "$1"  if m/^\s*prerm_hook\s*=\s*(\S+)/i;
+      $mkimage       = "$1"  if m/^\s*mkimage\s*=\s*(.+)$/i;
+      $ramdisk       = "$1"  if m/^\s*ramdisk\s*=\s*(.+)$/i;
+    }
+    close CONF;
+    $have_conffile = "Yes";
+  }
+}
+
+# For some versions of kernel-package, we had this warning in the
+# postinst, but the rules did not really interpolate the value in.
+# Here is a sanity check.
+my $pattern = "=" . "I";
+$initrd=~ s/^$pattern$//;
+
+# Tack on at least one trainling /
+$image_dest = "$image_dest/";
+$image_dest =~ s|^/*|/|o;
+$image_dest =~ s|/+$|/|o;
+
+if (! -d "$image_dest") {
+  die "Expected Image Destination dir ($image_dest) to be a valid directory!\n";
+}
+
+# most of our work is done in $image_dest (nominally /)
+chdir("$image_dest") or die "could not chdir to $image_dest:$!\n";
+
+# Paranoid check to make sure that the correct value is put in there
+if    (! $kimage)                      { $kimage = "vmlinuz"; } # Hmm. empty
+elsif ($kimage =~ m/^b?zImage$/o)     {$kimage = "vmlinuz"} # these produce vmlinuz
+elsif ($kimage =~ m/^[iI]mage$/o)     { my $nop = $kimage;}
+elsif ($kimage =~ m/^vmlinux$/o)      { my $nop = $kimage;}
+elsif ($kimage =~ m/^xen[0u]-linux$/o){ $package_name  = "${kimage}-$version";}
+else                                   {$kimage = "vmlinuz"} # default
+
+$ENV{KERNEL_ARCH}=$kernel_arch if $kernel_arch;
+
+die "Internal Error: Could not find image (" . $realimageloc
+  . "$kimage-$version)\n" unless -e $realimageloc
+  . "$kimage-$version";
+
+######################################################################
+## Fix the build link
+######################################################################
+sub fix_build_link {
+  return unless -d "$modules_base/$version";
+  # if we saved a build link in preinst, restore the link
+  if (! -e "$modules_base/$version/build" && 
+      -l "$modules_base/$version/build.save" ) {
+    rename("$modules_base/$version/build.save", "$modules_base/$version/build") ||
+      die "failed to move $modules_base/$version/build:$!";
+  }
+  if ($relink_build_link || $force_build_link) {
+    my $build_target;
+    my $real_target = '';
+    if (-l "$modules_base/$version/build") {
+      $build_target = readlink "$modules_base/$version/build";
+    } else {
+      return;
+    }
+    # Determine what the real file name is, and test that for existence
+    $real_target = abs_path($build_target) if defined($build_target);
+    if (!defined($build_target) || ! -d "$real_target") { # Danglink link
+      warn qq(
+ Hmm. There is a symbolic link $modules_base/$version/build
+ However, I can not read it: $!
+ Therefore, I am deleting $modules_base/$version/build\n
+);
+      my $num = unlink "$modules_base/$version/build";
+      if ($num != 1) {
+        warn "error unlinking $modules_base/$version/build";
+      } else {
+        if ($force_build_link || -d "/usr/src/=ST-headers-$version") {
+          my $result = symlink ("/usr/src/=ST-headers-$version",
+                                "$modules_base/$version/build");
+          if (! $result) {
+            warn "Could not link /usr/src/=ST-headers-$version to $modules_base/$version/build:$!"
+          }
+        }
+      }
+    }
+  }
+}
+
+if ($relink_build_link || $force_build_link) {
+  &fix_build_link();
+}
+######################################################################
+## Fix the source link
+######################################################################
+sub fix_source_link {
+  return unless -d "$modules_base/$version";
+  if ($relink_src_link) {
+    my $source_target;
+    my $real_target = '';
+
+    if (-l "$modules_base/$version/source") {
+      $source_target = readlink "$modules_base/$version/source";
+    } else {
+      return;
+    }
+    # Determine what the real file name is, and test that for existence
+    $real_target = abs_path($source_target) if defined($source_target);
+    if (!defined($source_target) || ! -d "$real_target") { # Danglink link
+      warn qq(
+ Hmm. The package shipped with a symbolic link $modules_base/$version/source
+ However, I can not read the target: $!
+ Therefore, I am deleting $modules_base/$version/source\n
+);
+      my $num = unlink "$modules_base/$version/source";
+      if ($num != 1) {
+        warn "error unlinking $modules_base/$version/source";
+      }
+    }
+  }
+}
+
+if ($relink_src_link) {
+  &fix_source_link();
+}
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+
+# We may not have any modules installed
+if ( -d "$modules_base/$version" ) {
+  print STDERR "Running depmod.\n";
+  my $ret = system("depmod -a -F $realimageloc/System.map-$version $version");
+  my $exit_value  = $? >> 8;
+  my $signal_num  = $? & 127;
+  my $dumped_core = $? & 128;
+  if ($ret) {
+    if ( -f "$modules_base/$version/modules.dep") {
+      unlink "$modules_base/$version/modules.dep" unless $initrd;
+    }
+    my $seen;
+    my $answer;
+    my $question = "${package_name}/postinst/depmod-error-$version";
+    if ($initrd) {
+      $question = "${package_name}/postinst/depmod-error-initrd-$version";
+    }
+    ($ret,$seen) = fset ("$question", 'seen', 'false');
+    die "Error setting debconf flags in $question: $seen" if $ret;
+
+    $ret = subst("$question", 'modules_base', "$modules_base");
+    die "Error setting debconf substitutions in $question: $seen" if $ret;
+
+    $ret = subst("$question", 'SIGNAL', ", and got a signal $signal_num");
+    die "Error setting debconf substitutions in $question: $seen" if $ret;
+
+    if ($dumped_core) {
+      $ret = subst("$question", 'CORE', ", and dumped core");
+      die "Error setting debconf substitutions in $question: $seen" if $ret;
+    }
+    else {
+      $ret = subst("$question", 'CORE', " ");
+      die "Error setting debconf substitutions in $question: $seen" if $ret;
+    }
+
+    ($ret,$seen) = input('medium', "$question");
+    if ($ret && $ret != 30 ) {
+      die "Error setting debconf question $question: $seen";
+    }
+
+    ($ret,$seen) = go ();
+    if ($ret && $ret != 30 ) {
+      die "Error asking debconf question $question: $seen";
+    }
+
+    ($ret,$answer) = get("$question");
+    die "Error retreiving answer for $question: $answer" if $ret;
+
+    if (! $ignore_depmod_err) {
+      if ($answer =~ /^(y|t)/i) {
+        exit(1);
+      }
+      else {
+        print STDERR "Ok, continuing as directed\n";
+      }
+    }
+  }
+}
+
+
+# We used to have System.* files in /
+if (-e "/System.map" || -e "/System.old") {
+  my $ret;
+  my $answer;
+  my $question = "${package_name}/postinst/old-system-map-link-$version";
+
+  ($ret,$answer) = get("$question");
+  die "Error retreiving answer for $question: $answer" if $ret;
+
+  $answer =~ s/^\s+//;
+  $answer =~ s/\s+$//;
+  if ($answer =~ /^(y|t)/i) {
+    unlink '/System.map' if -e '/System.map';
+    unlink '/System.old' if -e '/System.old';
+    print STDERR "Obsolete links removed.\n";
+  }
+}
+
+# set the env var stem
+$ENV{'STEM'} = "=ST";
+sub run_hook {
+  my $type   = shift;
+  my $script = shift;
+
+  print STDERR "Running $type hook script $script.\n";
+  system ("$script $version $realimageloc$kimage-$version") &&
+    print STDERR "User $type hook script [$script] ";
+  if ($?) {
+    if ($? == -1) {
+      print STDERR "failed to execute: $!\n";
+    }
+    elsif ($? & 127) {
+      printf STDERR "died with signal %d, %s coredump\n",
+        ($? & 127),  ($? & 128) ? 'with' : 'without';
+    }
+    else {
+      printf STDERR "exited with value %d\n", $? >> 8;
+    }
+    exit $? >> 8;
+  }
+}
+
+# Set up the env variable containing our arguments
+my $out;
+for (@ARGV) {
+  s,','\\'',g;
+  $out.=" '$_'";
+}
+$ENV{'DEB_MAINT_PARAMS'}="$out";
+$ENV{'KERNEL_PACKAGE_VERSION'}="$kernel_pkg_version";
+
+if (!$initrd) {
+  $ENV{INITRD}='No';
+}
+## Run user hook script here, if any
+if (-d "/etc/kernel/postinst.d") {
+  print STDERR "Examining /etc/kernel/postinst.d.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/postinst.d") &&
+            die "Failed to process /etc/kernel/postinst.d";
+}
+
+if (-d "/etc/kernel/postinst.d/$version") {
+  print STDERR "Examining /etc/kernel/postinst.d/$version.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/postinst.d/$version") &&
+            die "Failed to process /etc/kernel/postinst.d/$version";
+}
+
+if ($postinst_hook) {
+  &run_hook("postinst", $postinst_hook);
+}
+
+# creating some info about kernel and initrd
+if ($DEBUG) {
+  my $ksize=sprintf("%.0f",(stat($realimageloc .
+                                 "$kimage-$version"))[7]/1024)."kB";
+  my $initrdsize='';
+  if ($initrd) {
+    $initrdsize=sprintf("%.0f",(stat($realimageloc .
+                                     "initrd.img-$version"))[7]/1024)."kB";
+  }
+
+  print STDERR <<"EOMSG";
+A new kernel image has been installed at $realimageloc$kimage-$version
+ (Size: $ksize)
+
+Symbolic links, unless otherwise specified, can be found in $image_dest
+
+EOMSG
+  ;
+
+  if ($initrd) {
+    print STDERR <<"EOMSGA";
+
+ Initial rootdisk image: ${realimageloc}initrd.img-$version (Size: $initrdsize)
+EOMSGA
+    ;
+  }
+}
+
+exit 0;
+
+__END__
+

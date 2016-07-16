@@ -1,0 +1,130 @@
+#!/usr/bin/perl
+#                              -*- Mode: Cperl -*- 
+# debian.postinst ---
+# Author           : Manoj Srivastava ( srivasta@pilgrim.umass.edu )
+# Created On       : Sat Apr 27 05:42:43 1996
+# Created On Node  : melkor.pilgrim.umass.edu
+# Last Modified By : Manoj Srivastava
+# Last Modified On : Mon Apr 13 14:25:13 2009
+# Last Machine Used: anzu.internal.golden-gryphon.com
+# Update Count     : 44
+# Status           : Unknown, Use with caution!
+# HISTORY          :
+# Description      :
+#
+#
+#
+#  arch-tag: bf48605d-f6e9-4df6-9be3-31017c6406df
+#
+
+
+$|=1;
+
+# Predefined values:
+my $version            = "=V";
+my $move_image         = '';     # target machine defined
+my $kimage             = "=K";   # Should be empty, mostly
+my $image_dir          = "=D";        # where the image is located
+my $clobber_modules    = '';          # target machine defined
+my $postinst_hook      = '';          #Normally we do not
+my $postrm_hook        = '';          #Normally we do not
+my $preinst_hook       = '';          #Normally we do not
+my $prerm_hook         = '';          #Normally we do not
+my $ignore_depmod_err  = '';          # normally we do not
+my $relink_src_link    = 'YES'; # There is no harm in checking the link
+my $relink_build_link  = 'YES'; # There is no harm in checking the link
+my $force_build_link   = '';    # There is no harm in checking the link
+my $arch               = "=A"; #  should be same as dpkg --print-installation-architecture
+my $kernel_arch        = "=B";
+my $package_name       = "=ST-doc-$version";
+my $kernel_pkg_version = "=KPV";
+
+# Ignore all invocations uxcept when called on to configure.
+exit 0 unless ($ARGV[0] && $ARGV[0] =~ /configure/);
+
+#known variables
+my $image_dest      = "/";
+my $realimageloc    = "/$image_dir/";
+my $have_conffile   = "";
+my $silent_modules  = '';
+my $modules_base    = '/lib/modules';
+my $CONF_LOC        = '/etc/kernel-img.conf';
+# remove multiple leading slashes; make sure there is at least one.
+$realimageloc  =~ s|^/*|/|o;
+$realimageloc  =~ s|/+|/|o;
+
+my $architecture;
+chomp($architecture = `dpkg --print-installation-architecture`);
+$architecture = "ppc" if $architecture eq "powerpc";
+$architecture = "parisc" if $architecture eq "hppa";
+$architecture = "mips" if $architecture eq "mipsel";
+$architecture = "x86_64" if $architecture eq "amd64";
+
+my $stop_and_read     = 0;
+my $src_postinst_hook = '';
+my $doc_preinst_hook = '';
+my $doc_postinst_hook = '';
+my $doc_prerm_hook = '';
+my $doc_postrm_hook = '';
+
+
+if (-r "$CONF_LOC" && -f "$CONF_LOC"  ) {
+  if (open(CONF, "$CONF_LOC")) {
+    while (<CONF>) {
+      chomp;
+      s/\#.*$//g;
+      next if /^\s*$/;
+
+      $doc_preinst_hook  = "$1"  if m/^\s*doc_preinst_hook\s*=\s*(\S+)/i;
+      $doc_postinst_hook = "$1"  if m/^\s*doc_postinst_hook\s*=\s*(\S+)/i;
+      $doc_prerm_hook    = "$1"  if m/^\s*doc_prerm_hook\s*=\s*(\S+)/i;
+      $doc_postinst_hook = "$1"  if m/^\s*doc_postinst_hook\s*=\s*(\S+)/i;
+    }
+    close CONF;
+    $have_conffile = "Yes";
+  }
+}
+
+# Set up the env variable containing our arguments
+my $out;
+for (@ARGV) {
+  s,','\\'',g;
+  $out.=" '$_'";
+}
+$ENV{'DEB_MAINT_PARAMS'}="$out";
+$ENV{'KERNEL_PACKAGE_VERSION'}="$kernel_pkg_version";
+
+## Run user hook script here, if any
+if (-d "/etc/kernel/doc_postrm.d") {
+  print STDERR "Examining /etc/kernel/doc_postrm.d.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/doc_postrm.d") &&
+            die "Failed to process /etc/kernel/doc_postrm.d";
+}
+
+if (-d "/etc/kernel/doc_postrm.d/$version") {
+  print STDERR "Examining /etc/kernel/doc_postrm.d/$version.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/doc_postrm.d/$version") &&
+            die "Failed to process /etc/kernel/doc_postrm.d/$version";
+}
+
+if (-x "$doc_postrm_hook") {
+    system ("$doc_postrm_hook", $package, $version) &&
+      warn "User hook script $doc_postrm_hook failed";
+}
+
+
+exit 0;
+
+__END__
+
+
+
+
+
+
+
+

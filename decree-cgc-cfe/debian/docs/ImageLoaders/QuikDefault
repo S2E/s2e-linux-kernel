@@ -1,0 +1,23 @@
+If the post install script finds Quik on the system (/sbin/quik),
+it checks to see if there already exists a configuration file
+/etc/quik.conf. If not, a boilerplate Quik configuration file that 
+will work with the image just installed, as follows.
+
+It looks into /etc/fstab, looking for the device that the root (/)
+directory is on, also, it looks for any partition that may have a boot
+sector installed by Quik, ignoring swap, NFS and proc file systems and
+floppy drives (if no Quik sector is found, it assumes that the drive
+that the root device is on should be where Quik places the block (this
+is not good for all installations, but it gives a starting point) and
+inserts lines like (assuming the root directory is on /dev/sda4):
+----------------------------------------------------------------------
+root=/dev/sda4
+----------------------------------------------------------------------
+
+and then appends the following:
+----------------------------------------------------------------------
+timeout=100
+image=/vmlinuz
+label=Linux
+read-only
+----------------------------------------------------------------------

@@ -1,0 +1,1096 @@
+<html>
+<head>
+<title>
+Creating a Custom Linux Kernel in Debian GNU/Linux
+</title>
+<meta name="description" content="Creating a Custom Linux Kernel in Debian GNU/Linux" />
+<meta name="keywords" content="Debian GNU/Linux custom Linux kernel kernel-package make-kpkg make menuconfig patch source compile" />
+<meta name="author" content="Stephen Powell" />
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1" />
+<meta name="revised" content="2009-11-12">
+</head>
+<body>
+<h1 align=center>
+Creating a Custom Linux Kernel in Debian GNU/Linux
+</h1>
+<h2>
+Disclaimer
+</h2>
+<p>
+This is not an official Debian site.&nbsp;
+The author is not a member of the Debian kernel team.&nbsp;
+This is not an official Linux kernel site.&nbsp;
+This document details the author's experiences
+and recommendations in
+building a custom Linux kernel under Debian GNU/Linux.&nbsp;
+All opinions expressed are those of the author and do not necessarily
+represent the opinions or the official positions
+of the staff or management of Debian, the Linux kernel organization,
+or anyone else.&nbsp;
+This information is presented in the hope that it will be useful,
+but without any warranty or guarantee of any kind.&nbsp;
+This information is presented free of charge, free of support,
+free of service, and free of liability.&nbsp;
+Take this information
+with as many grains of salt as you think it's worth;
+and use it, if you
+choose to do so, entirely at your own risk.&nbsp;
+The author hereby explicitly
+places this material in the public domain.&nbsp;
+All trademarks, registered
+trademarks, service marks, etc. are the property of their respective
+owners.
+</p>
+<h2>
+Introduction
+</h2>
+<p>
+Most of the time, the stock kernel images
+obtained from Debian are adequate.&nbsp;
+But occasionally one may need to create a custom kernel image in order to
+take advantage of some special feature or solve a particular problem.&nbsp;
+You may also want to create a custom kernel in order to create a
+"lean and mean" kernel: one which is as small as possible and contains
+only the code necessary to do the function assigned to this machine.&nbsp;
+(This is often done in embedded systems.)&nbsp;
+I assume that you already know why you need or want to build a custom
+kernel.&nbsp;
+The purpose of this document is to show you how.&nbsp;
+The example I will use is from the s390/s390x architecture,
+and it involves applying a patch to a kernel source module,
+but the techniques are applicable to all architectures.&nbsp;
+</p>
+<p>
+I had a roommate in college who had spent four years in the Navy.&nbsp;
+He told me that in the Navy there are three ways to do everything:
+the right way, the wrong way, and the Navy way!&nbsp;
+Well, kernel building in Debian is like that too.&nbsp;
+Although there are similarities to other distributions,
+Debian definitely has their own way of building kernels.&nbsp;
+Information that you may find on distribution-independent Linux
+sites or sites from non-Debian-based distributions
+that talk about building a custom kernel are not likely
+to be very useful in Debian.&nbsp;
+Debian wants <em>everything</em>, including the kernel itself,
+to go through its package management system.&nbsp;
+As a result, kernel building in Debian is quite different from
+other non-Debian-based distributions.
+</p>
+<p>
+I have found that the documentation for kernel building in Debian is spread
+out over several different sources.&nbsp;
+Some of these documents are out of date.&nbsp;
+Furthermore, there are a number of small but important steps that are often
+left out.&nbsp;
+This write-up is an attempt to document the procedure in detail.
+</p>
+<p>
+I would like to start by discussing naming conventions.&nbsp;
+For Linux kernels
+2.6.8 and earlier, the name of the kernel image package in the Debian archive
+begins with "kernel-image".&nbsp;
+An example is "kernel-image-2.6.8-2-s390".&nbsp;
+Similarly, the kernel source code packages begin with "kernel-source".&nbsp;
+An example is "kernel-source-2.6.8".&nbsp;
+This naming convention implies that all
+kernels are Linux kernels.&nbsp;
+But the Hurd kernel is also now available, and the FreeBSD kernel
+is on the horizon as well.&nbsp;
+Therefore, later Linux kernels now have their image package
+names begin with
+"linux-image" and their source package names begin with "linux-source".&nbsp;
+This change occurred between Sarge and Etch.&nbsp;
+Much of the documentation for Linux
+kernel building was written in the days of Sarge and previous releases and
+still uses the old naming convention.&nbsp;
+If you don't know about the naming
+convention change, you will never be able to find the kernel source package
+that you need in the Debian archive.&nbsp;
+So remember, despite what the
+documentation may say, look for the kernel source package under the name
+"linux-source", not "kernel-source".
+</p>
+<p>
+I am assuming that you have never downloaded or configured a
+kernel source package on your system before and that you want to create a
+custom kernel image of the same kernel release as the stock kernel that you
+are currently running.&nbsp;
+I'll be using kernel 2.6.26 from the Lenny release and the s390/s390x
+architecture in my examples, but as I said earlier
+the techniques are applicable to all releases and architectures.&nbsp;
+Login as root to do this type of administration.&nbsp;
+Some of the other kernel-building documents
+that I've seen make a big deal about
+what parts of the procedure can be done as a non-root user.&nbsp;
+I never bother with that.&nbsp;
+To me, kernel building and installing are administrative tasks,
+and I just stay root the whole time.&nbsp;
+It's simpler that way.&nbsp;
+This document will assume that you are logged on as root at all times
+during the procedure unless otherwise noted.
+</p>
+<h2>
+Step 1: Update your sources.list file
+</h2>
+<p>
+The retrieval of packages in Debian is
+controlled by a file called /etc/apt/sources.list.&nbsp;
+If you installed Debian
+from a CD-ROM, chances are that only the first CD is listed in the
+sources.list file.&nbsp;
+If you have a complete set of CDs, but only the first one
+is listed, you need to update this file.&nbsp;
+However, adding CDs to sources.list
+cannot be accomplished via a text editor.&nbsp;
+Other files in other places must
+be updated too in order for a CD entry in sources.list to work.&nbsp;
+To add new
+CDs to the sources.list file, use the following command:
+</p>
+<br>&nbsp;
+<pre>
+     apt-cdrom add
+</pre>
+<p>
+You will need to issue this command once for every CD in your set that is not
+already listed in sources.list.&nbsp;
+If you have several "disk 1" CDs in your
+set, don't scan the alternate ones.&nbsp;
+For example, Lenny ships with 3 "disk 1"
+CDs: one for a GNOME-based desktop environment, one for a KDE-based desktop
+environment, and one for an XFCE-based desktop environment.&nbsp;
+If you installed
+from the GNOME version of disk 1, it is the one listed in your sources.list
+file.&nbsp;
+Don't scan the other two "disk 1" CDs with apt-cdrom.&nbsp;
+Each time you
+run apt-cdrom, it will prompt you to insert a CD and press Enter.&nbsp;
+After you
+do this, it will mount the CD, scan the CD looking for package information,
+then umount the CD.&nbsp;
+When the command completes, remove the CD from the CD
+drive.&nbsp;
+apt-cdrom is also used if you have installed from DVDs.&nbsp;
+(Of course,
+there will be far fewer DVDs in a complete set than there are for a complete
+set of CDs, since a DVD holds much more data per disk.)
+</p>
+<p>
+If you have access to the internet, you should include an internet server in
+sources.list.&nbsp;
+This is true even if you installed Debian from CDs.&nbsp;
+This will
+allow you to install the most recent version of a package, if there is a newer
+version than the one on the CD.&nbsp;
+(Packages in the stable release are not
+normally updated during the life of the release except to fix bugs involving
+security vulnerabilities or to replace data that is highly volatile in 
+nature.&nbsp;
+An example is the virus signature data for an
+anti-virus software package.)&nbsp;
+You should also make sure that the volatile and security sites
+are present as well.&nbsp;
+(But don't use the volatile site for the testing or unstable releases.)&nbsp;
+If you didn't have access to the internet during
+installation, the installer may have commented out these entries.&nbsp;
+If you have
+access to the internet now, but you didn't during installation, uncomment
+these entries.&nbsp;
+You might also want to add entries for the "non-free" and
+"contrib" sections, in addition to the "main" section.&nbsp;
+The CDs contain only
+the main section.
+</p>
+<p>
+With the exception of the volatile and security sites, which must use
+HTTP, you have a choice, for most of the Debian mirrors, whether to use HTTP
+or FTP as the file transfer protocol.&nbsp;
+Be careful though -- some of the
+mirrors use a different path name for HTTP and FTP.&nbsp;
+For a full list of
+Debian mirrors, see
+<a href="http://www.debian.org/mirror/list">http://www.debian.org/mirror/list</a>.&nbsp;
+Choose the mirror
+nearest to you or which gives you the shortest latency or the highest data
+transfer rate.&nbsp;
+Make sure you choose a mirror which supports the file
+transfer method you want to use and specify the correct path for that type of
+data transfer.&nbsp;
+Also, make sure that you choose a mirror that mirrors your
+machine architecture.&nbsp;
+(Not all mirrors mirror all architectures!)&nbsp;
+For more
+information, see the man page for sources.list
+and the above-mentioned web page which lists all the mirrors.&nbsp;
+For all sources except CDs
+and DVDs, the sources.list file can and should be edited
+by a text editor.&nbsp;
+Make sure that the internet sources are listed after the CD/DVD sources, and
+make sure that the volatile and security sources are listed last.&nbsp;
+Here is a sample
+sources.list file:
+</p>
+<br>&nbsp;
+<pre>
+     .
+     . (possible CD entries added by apt-cdrom)
+     .
+     deb ftp://debian.uchicago.edu/debian lenny main non-free contrib
+     deb-src ftp://debian.uchicago.edu/debian lenny main non-free contrib
+     deb http://volatile.debian.org/debian-volatile lenny/volatile main non-free contrib
+     deb-src http://volatile.debian.org/debian-volatile lenny/volatile main non-free contrib
+     deb http://security.debian.org lenny/updates main non-free contrib
+     deb-src http://security.debian.org lenny/updates main non-free contrib
+</pre>
+<p>
+The "deb" entries specify a server for binary packages and the "deb-src"
+entries specify a server for source packages.&nbsp;
+The University of Chicago's
+Debian mirror site has been selected for both package types, using the FTP
+protocol.&nbsp;
+Only packages from the Lenny distribution will be
+selected, but the "non-free" and "contrib" sections have been added to the
+standard "main" section.&nbsp;
+The standard Debian volatile and security servers have been
+added at the end, using the HTTP protocol.
+</p>
+<h2>
+Step 2: Update the list of available packages
+</h2>
+<p>
+Once the sources.list file has been
+updated, you need to update the package management system's list of available
+packages.&nbsp;
+The book says the way to do this is to issue the command:
+</p>
+<br>&nbsp;
+<pre>
+     aptitude update
+</pre>
+<p>
+and that will work.&nbsp;
+"apt-get&nbsp;update" works too.&nbsp;
+But I prefer "dselect&nbsp;update" because it provides
+more information than "apt-get&nbsp;update" or "aptitude&nbsp;update"
+does.&nbsp;
+Specifically, it downloads package descriptions for all available
+packages, instead of only installed packages.&nbsp;
+dselect is not part of the standard system anymore;
+so unless you explicitly installed it earlier it's
+probably not installed.&nbsp;
+In that case, the first thing you will need to do is
+install dselect.&nbsp;
+I don't recommend that you use dselect to install packages,
+but I do recommend it for updating the list of available
+packages.&nbsp;
+You may need to update the list of available packages
+before you can install dselect!&nbsp;
+Use "aptitude&nbsp;update" or "apt-get&nbsp;update" to do that.&nbsp;
+But once dselect is installed, run "dselect&nbsp;update"
+to update the list of available packages again.
+</p>
+<h2>
+Step 3: Apply pending updates
+</h2>
+<p>
+After updating the list of available
+packages, as outlined above, you should apply all the pending updates that
+have accumulated since you last applied updates (or since installation, if
+you have never applied updates).&nbsp;
+To do this, enter the following command:
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R full-upgrade
+</pre>
+<p>
+While we're on the subject, now would be a good time to subscribe to the
+debian-security-announce mailing list on the Debian web site.&nbsp;
+To subscribe,
+send an e-mail to
+<a href="mailto:debian-security-announce-request@lists.debian.org">debian-security-announce-request@lists.debian.org</a>
+with a
+subject line of "subscribe" (without the quotes).&nbsp;
+You will receive a
+follow-up e-mail from Debian which will give instructions on how to confirm
+the subscription.&nbsp;
+Follow the instructions in the follow-up e-mail.&nbsp;
+Then,
+whenever you receive a security alert, update the list of packages again
+with "dselect&nbsp;update".&nbsp;
+Then use
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R full-upgrade
+</pre>
+<p>
+to install the updates.&nbsp;
+Similarly, subscribe to the debian-volatile-announce mailing list on the
+Debian web site by sending an e-mail to
+<a href="mailto:debian-volatile-announce-request@lists.debian.org">debian-volatile-announce-request@lists.debian.org</a>
+with a subject line of "subscribe" (without the quotes)
+and following the directions in the reply.&nbsp;
+(Once again, the debian-volatile service is not provided for
+the testing or unstable releases.)&nbsp;
+When you are finished installing package updates, use
+</p>
+<br>&nbsp;
+<pre>
+     aptitude clean
+</pre>
+<p>
+to delete the package files (.deb files) from the staging area
+(/var/cache/apt/archives).&nbsp;
+Once the packages have been installed, you don't
+need the package files themselves anymore.&nbsp;
+This will save disk space.&nbsp;
+Once the updates have been installed, it is a good idea
+to shutdown and reboot.
+</p>
+<p>
+<strong>Note:</strong>
+only package files downloaded from the internet are copied to the
+staging area.&nbsp;
+Package files read from CD-ROM or DVD are not copied to the
+staging area but are processed directly from the mountable media.
+</p>
+<h2>
+Step 4: Install the kernel source package
+</h2>
+<p>
+Once you have updated the list of
+available packages, you should be able to see the package information with
+various tools.&nbsp;
+In line mode, use dpkg-query to see the information about the
+package.&nbsp;
+(Information about packages that are not installed
+is only available in this way
+if you used "dselect&nbsp;update" instead of "apt-get&nbsp;update"
+or "aptitude&nbsp;update" to update the list of packages.)&nbsp;
+For example:
+</p>
+<br>&nbsp;
+<pre>
+     dpkg-query -p linux-source-2.6.26|less
+</pre>
+<p>
+If you don't know what kernel release you're running, you can find out by
+issuing the command:
+</p>
+<br>&nbsp;
+<pre>
+     uname -r
+</pre>
+<p>
+dselect can also be used to browse the package cache and find the information
+about the package.&nbsp;
+To actually install the source package, use
+aptitude.&nbsp;
+For example,
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R install linux-source-2.6.26
+</pre>
+<p>
+This will install the kernel source code.&nbsp;
+You can obtain kernel source packages from other places,
+but I recommend using official Debian kernel source packages
+because they contain all the Debian-specific modifications.&nbsp;
+Once this command
+has completed, enter
+</p>
+<br>&nbsp;
+<pre>
+     aptitude clean
+</pre>
+<p>
+to delete the package <strong>file</strong> (not
+the package) from the staging area.
+</p>
+<h2>
+Step 5: Unpack the kernel sources
+</h2>
+<p>
+So what did
+"aptitude&nbsp;-R&nbsp;install&nbsp;linux-source-2.6.26"
+just do?&nbsp;
+If everything worked correctly, you should now have a file in the /usr/src
+directory that starts out as "linux-source" and ends in ".tar.bz2".&nbsp;
+It is at
+this point that many people make a mistake.&nbsp;
+They create a directory in
+/usr/src called linux-source-2.6.26, move the kernel source tar file to that
+directory, then unpack the tar file from there.&nbsp;
+Don't do that.&nbsp;
+If you do,
+you will end up with two levels of directory called
+linux-source-2.6.26.&nbsp;
+Instead, change directories to /usr/src and unpack the
+kernel sources right where they
+are.&nbsp;
+For example:
+</p>
+<br>&nbsp;
+<pre>
+     cd /usr/src
+     tar -xjf linux-source-2.6.26.tar.bz2
+</pre>
+<p>
+The "x" switch of tar indicates that the "extract" function will be used.&nbsp;
+The "j" switch tells tar to filter the archive through bzip2 to
+decompress the archive first, before tar itself processes the file.&nbsp;
+And finally, the "f" switch specifies that input is to be read from a file
+specified on the command line, instead of standard input.
+</p>
+<p>
+The above "tar" command will create a directory under the current directory
+(/usr/src) called linux-source-2.6.26.&nbsp;
+All the kernel source code and
+associated files will be unpacked
+to this directory and its subdirectories.&nbsp;
+Strictly speaking,
+one is not supposed to erase a file belonging to an installed
+package.&nbsp;
+But once the archive has been unpacked, there's really no use in
+keeping it around.&nbsp;
+I recommend getting rid of it.&nbsp;
+I suppose the "right" way
+to do it would be to purge the package.&nbsp;
+But then you won't automatically
+get security updates for it.&nbsp;
+So my approach is to simply delete it once it
+has been unpacked.
+</p>
+<br>&nbsp;
+<pre>
+     rm linux-source-2.6.26.tar.bz2
+</pre>
+<p>
+This saves a lot of disk space.
+</p>
+<h2>
+Step 6: Install kernel-package
+</h2>
+<p>
+If you have not already done so, install the
+"kernel-package" package.&nbsp;
+You can check to see if it is already installed
+by using the search function in dselect.&nbsp;
+In line mode, the command
+</p>
+<br>&nbsp;
+<pre>
+     dpkg-query -l kernel-package|grep ii
+</pre>
+<p>
+will do nicely.&nbsp;
+If it is not already installed, install it.&nbsp;
+Apparently, kernel-package was at one time used by,
+or was intended to be used by, the
+official Debian kernel team to create stock kernel
+images;
+but at some point there was a parting of the ways;
+and the official Debian kernel team now uses other tools
+to create stock kernel images.&nbsp;
+I haven't seen any real documentation on the tools
+that the Debian kernel team uses to create the stock kernel
+images, and kernel-package works well,
+so I continue to use it and recommend it.
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R install kernel-package
+</pre>
+<p>
+Read the documentation for kernel-package
+</p>
+<br>&nbsp;
+<pre>
+     zless /usr/share/doc/kernel-package/README.gz
+</pre>
+<p>
+Determine what additional packages you may need, assuming that you are going
+to use "make&nbsp;menuconfig".&nbsp;
+Since there are a number of
+different kernel configuration methods (config, menuconfig, xconfig, etc.),
+and since kernel-package doesn't know which one you plan to use, it does not
+mark anything as a prerequisite unless it is a prerequisite for all
+configuration methods.&nbsp;
+At the time of this writing, the following packages
+will be required for the menuconfig method:
+</p>
+<br>&nbsp;
+<pre>
+     gcc
+     libc6-dev
+     bin86 (i386 architecture only)
+     libncurses5-dev
+     binutils
+     make
+     module-init-tools
+     mawk | gawk (one or the other, not both)
+     gzip
+     coreutils
+     grep
+     zlib1g-dev (if CONFIG_LGUEST is set)
+</pre>
+<p>
+Many of these packages will already be installed.&nbsp;
+To check to see if these packages are installed, use dpkg-query.&nbsp;
+For example:
+</p>
+<br>&nbsp;
+<pre>
+     dpkg-query -l gcc|grep ii
+</pre>
+<p>
+Alternatively, you can use dselect to check to see which packages need to be
+installed.&nbsp;
+Install those packages which you need with "aptitude&nbsp;install".&nbsp;
+For example:
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R install libncurses5-dev
+     aptitude clean
+</pre>
+<h2>
+Step 7: Patch the kernel (if needed)
+</h2>
+<p>
+At this point, apply any patches to the kernel
+source code that are needed.&nbsp;
+In this example, we apply a patch to dasd_diag.c to fix a problem with
+read-only minidisks.&nbsp;
+We assume here that the patch to be applied is
+/root/dasd_diag.diff
+and that the current directory is /usr/src.
+</p>
+<br>&nbsp;
+<pre>
+     patch linux-source-2.6.26/drivers/s390/block/dasd_diag.c \
+      /root/dasd_diag.diff
+</pre>
+<p>
+This patch file is available on my web site
+<a href="dasd_diag.diff">here</a>.&nbsp;
+Right-click on the previous link and select "Save Link as"
+to download it to your system.&nbsp;
+If you are using the lynx text-mode browser,
+download the file by typing the letter "d"
+(without the quotes) when the link is selected.
+</p>
+<h2>
+Step 8: Configure the kernel
+</h2>
+<p>
+First, change directories to the home directory for
+the source code.
+</p>
+<br>&nbsp;
+<pre>
+     cd linux-source-2.6.26
+</pre>
+<p>
+The full working directory is now /usr/src/linux-source-2.6.26.&nbsp;
+Now, initialize the .config file based on the configuration file
+used by the stock Debian kernel.
+</p>
+<br>&nbsp;
+<pre>
+     cp /boot/config-2.6.26-2-s390 .config
+</pre>
+<p>
+This means that if you make no changes, your custom kernel will be configured
+exactly like the stock Debian kernel.&nbsp;
+(If you are running the 64-bit version of the s390
+kernel, the file to copy is "/boot/config-2.6.26-2-s390x".)
+</p>
+<p>
+<strong>Note:</strong> this assumes that you have
+installed the kernel source code for the same level of kernel that you are
+currently running.&nbsp;
+I don't recommend that you migrate to a new kernel
+release this way.&nbsp;
+Don't use a config file from one kernel release as the
+basis for customization of a different kernel release.&nbsp;
+If you can't get
+a copy of a stock kernel config file for the same release as your source
+code, then don't initialize the .config file at all.
+</p>
+<p>
+To avoid confusion between a stock kernel and a custom kernel, I recommend
+that you edit the kernel-package config file (/etc/kernel-pkg.conf) and
+change the "maintainer" and "email" tags to
+your own name and e-mail address.&nbsp;
+Now it's time to configure the kernel:
+</p>
+<br>&nbsp;
+<pre>
+     make menuconfig
+</pre>
+<p>
+After some preliminaries, an ncurses-based full-screen application will be
+launched that allows you to configure the kernel.&nbsp;
+I assume that you know
+what to do here.
+</p>
+<p>
+<strong>Note:</strong> In the process of configuring your kernel,
+make sure that you leave
+CONFIG_BLK_DEV_INITRD set to Y, which is the default.&nbsp;
+This is listed under
+"Block devices" as "Initial RAM filesystem and RAM disk (initramfs/initrd)
+support".&nbsp;
+You're probably going to need that.&nbsp;
+I'll have more to say about
+that later.
+</p>
+<p>
+<strong>Note:</strong> Newer kernel config files contain
+a couple of settings that you should
+not use.&nbsp;
+These include "CONFIG_LOCALVERSION" (Local version - append to
+kernel release) and CONFIG_LOCALVERSION_AUTO (Automatically append version
+information to the version string).&nbsp;
+These are found under "General Setup".&nbsp;
+Debian has its own way of specifying this information.&nbsp;
+I'll have more to say
+about that later.
+</p>
+<p>
+<strong>Note:</strong> even if you do not plan to change
+the kernel configuration file copied
+from the /boot directory at all,
+you must still run "make&nbsp;menuconfig".&nbsp;
+make-kpkg relies on certain files that are created when you run
+"make&nbsp;menuconfig".&nbsp;
+If you don't wish to change anything,
+immediately select "Exit" when the initial screen
+is displayed.
+</p>
+<h2>
+Step 9: Create the kernel image package
+</h2>
+<p>
+This step will compile the kernel source
+code and create a Debian package file for the custom kernel.&nbsp;
+But before I get to
+the specific commands, I need to discuss naming conventions again.&nbsp;
+This is
+critically important.&nbsp;
+I need to talk about the difference between the kernel
+version name and the kernel revision name.&nbsp;
+Both the kernel version name and the kernel
+revision name become part of the package file name
+(.deb file) that gets created.&nbsp;
+However, when the package gets installed, the kernel revision
+name does not become
+part of the package name.&nbsp;
+It also does not become part of the kernel image file name or the
+initial RAM disk image file name that gets installed in
+the /boot directory.&nbsp;
+Similarly, the directory in which the kernel modules
+get installed (/lib/modules/...) does
+not contain the kernel revision name either.&nbsp;
+Since you want to retain your existing kernel image,
+initial RAM disk image,
+and modules unaltered as a backout, you must make the kernel version name
+different from the stock kernel version name in some way.
+</p>
+<p>
+This is accomplished by means of the "--append-to-version" flag
+of make-kpkg.&nbsp;
+I usually include the word "custom" in the name to distinguish it
+from the stock kernel of the same version.&nbsp;
+In this example, the stock kernel has an "--append-to-version" value
+of "-2-s390".&nbsp;
+(In other words, "uname&nbsp;-r" reports "2.6.26-2-s390".&nbsp;
+The version proper is "2.6.26" and the
+"--append-to-version" value is "-2-s390".)&nbsp;
+My first cut at a custom kernel would probably have an "--append-to-version"
+value of "-custom2-s390".&nbsp;
+For subsequent custom versions of the same stock kernel image
+I would probably use "-custom2a-s390", "-custom2b-s390",
+etc.&nbsp;
+(If creating a 64-bit custom kernel,
+use s390x instead of s390.&nbsp;
+For example, "-custom2-s390x".)
+</p>
+<p>
+On the other hand, I would keep the kernel revision exactly the same
+as the stock kernel.&nbsp;
+That way, I know exactly which stock kernel revision it
+corresponds to.&nbsp;
+For example, at the time of this writing, the current "--revision" value
+is "2.6.26-19lenny2".&nbsp;
+I obtain this value from the "version" reported by
+"dpkg-query&nbsp;-p&nbsp;linux-source-2.6.26"
+or "dpkg-query&nbsp;-p&nbsp;linux-image-2.6.26-2-s390".&nbsp;
+If the kernel source and the stock kernel image are in sync, their "versions"
+will match.&nbsp;
+It's confusing that the package "version" matches the kernel "revision",
+but that's what it boils down to.
+</p>
+<p>
+Also, I need to talk about initial ram disk images.&nbsp;
+A standard stock Debian kernel is configured with almost everything built as a
+module, if it can be a module, rather than built in to the kernel.&nbsp;
+This allows for installation on
+as wide a variety of hardware configurations as possible while holding the
+size of the kernel down as much as possible.&nbsp;
+But modules reside on disk.&nbsp;
+And any kernel function that is required
+for the kernel to be able to mount the
+partitions or do I/O to the disks must be loaded into storage before any
+kernel modules can be read from disk.&nbsp;
+This means that either this support must be
+compiled into the kernel or else it
+must be loaded from the initial ram disk.&nbsp;
+This is the primary purpose for an initial ram disk: it allows the kernel to
+load modules that it needs before it can read them from disk.&nbsp;
+Once the permanent root
+file system is mounted, the initial ram disk image is freed from memory.
+</p>
+<p>
+As an example from the i386 architecture, suppose your
+permanent root file system,
+which contains /lib/modules/..., is mapped
+to a partition on a SCSI disk.&nbsp;
+But the kernel support for the SCSI adapter is not compiled into the kernel:
+it is a loadable module.&nbsp;
+As an example from the s390 architecture,
+how can you load the dasd driver modules from disk when those modules must
+be loaded in order to do I/O to the disk?&nbsp;
+In such cases, you need an
+initial ram disk.&nbsp;
+Stock Debian kernels are set up via the boot loader
+(grub, lilo, zipl, etc.) to use initial ram disk images.&nbsp;
+I am assuming in
+these instructions that you are going to do the same.&nbsp;
+If not, then you must do three things:
+(1) You must make sure that all kernel function needed to get
+the permanent root file system mounted is built-in to the kernel.&nbsp;
+(2) You must not supply the "--initrd" flag to make-kpkg when you 
+invoke it.&nbsp;
+(3) You must change your boot loader configuration so that it does
+not expect an initial RAM disk image.&nbsp;
+Taking the path of least resistance, I am assuming that you are going
+to use an initial RAM disk image the way the stock kernels do.
+</p>
+<p>
+Finally, I am assuming that you are not using any third-party kernel modules
+(i.e. modules which do not ship with the kernel source).&nbsp;
+If you are, read
+the documentation for kernel-package and the man page for make-kpkg for
+information on what to do.&nbsp;
+In most cases, simply adding the modules_image
+target at the end of the command will do the trick.&nbsp;
+(But of course, the
+module source code package must have previously been installed and unpacked
+in the expected location.)
+</p>
+<p>
+OK, with all that said, here are the commands:
+</p>
+<br>&nbsp;
+<pre>
+     make-kpkg clean
+</pre>
+<p>
+You need to run this before each kernel build.&nbsp;
+Then issue:
+</p>
+<br>&nbsp;
+<pre>
+     make-kpkg --append-to-version -custom2-s390 --revision 2.6.26-19lenny2 \
+      --initrd kernel_image
+</pre>
+<p>
+In this example,
+I am assuming an s390 kernel image package is being built.&nbsp;
+Obviously, change the s390 specification to your architecture.&nbsp;
+The "--initrd" flag indicates that a kernel with an initial RAM disk image is
+to be built.&nbsp;
+The actual initial RAM disk image, however, is not built at
+this time.&nbsp;
+That is deferred until the package is installed.
+</p>
+<p>
+Compiling the entire kernel takes a while.&nbsp;
+We're talking hours, probably,
+depending on the speed of your processor.
+<p>
+When make-kpkg is finished, there will be a Debian kernel image package in
+the parent directory (.. or /usr/src) of the current directory (. or
+/usr/src/linux-source-2.6.26).&nbsp;
+If you included the modules_image target,
+there may also be one or more Debian package files (.deb files) for the
+modules images as well.
+</p>
+<h2>
+Step 10: Install the kernel image package
+</h2>
+<p>
+You won't use aptitude, apt-get, or
+dselect to install the kernel image package.&nbsp;
+That's because it doesn't have
+to be fetched from anywhere.&nbsp;
+Instead, use the low-level package tool dpkg.
+</p>
+<br>&nbsp;
+<pre>
+     cd ..
+     dpkg -i linux-image-2.6.26-custom2-s390_2.6.26-19lenny2_s390.deb
+</pre>
+<p>
+Obviously, use the actual name of the package file, which can be determined
+by using the ls command.&nbsp;
+If you have both a kernel image package and one or
+more modules image packages, install the kernel image package first, then the
+modules image packages.&nbsp;
+The latter will probably have a dependency on the
+former.
+</p>
+<p>
+The installation script will automatically re-run your boot loader if
+necessary.&nbsp;
+But before you shut down and reboot, it is a good idea to check
+everything out in your boot loader configuration to make sure that the
+new kernel was installed to your liking.
+</p>
+<h2>
+Step 11: Shutdown and reboot
+</h2>
+<p>
+Shutdown and reboot to run your new custom kernel!
+</p>
+<h2>
+Step 12: Clean up
+</h2>
+<p>
+Once the new kernel image package has been installed, you can
+delete the package file (.deb file).&nbsp;
+Login as root again, then
+</p>
+<br>&nbsp;
+<pre>
+     cd /usr/src
+     rm linux-image-2.6.26-custom2-s390_2.6.26-19lenny2_s390.deb
+</pre>
+<p>
+If you have also installed one or more modules image packages, you can delete
+their package files too.
+</p>
+<p>
+Once you are satisfied with the new kernel, you may wish to de-install the
+old kernel image.&nbsp;
+I like to keep at least one back version unless I know
+that the old kernel will no longer work due to changes made since migrating
+to the new kernel.&nbsp;
+For example, if my system now depends on a kernel module
+that did not exist in the old kernel, there's not much point in keeping the
+old kernel around.
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R purge linux-image-2.6.26-2-s390
+</pre>
+<p>
+This will de-install the old kernel image and
+save some more disk space.&nbsp;
+</p>
+<p>
+<strong>Note:</strong> you must shut down and reboot using
+the new kernel before de-installing
+the old kernel.&nbsp;
+aptitude will not let you de-install a running kernel!
+</p>
+<p>
+May you have much enjoyment running your new custom kernel!
+</p>
+<h2>
+Step 13: Maintenance
+</h2>
+<p>
+OK, now what if you get the new kernel installed and running, but you want to
+make changes to the kernel configuration.&nbsp;
+Maybe you forgot something the
+first time.&nbsp;
+Use a sequence of commands something like this.&nbsp;
+</p>
+<br>&nbsp;
+<pre>
+     cd /usr/src/linux-source-2.6.26
+     make menuconfig
+     make-kpkg clean
+     make-kpkg --append-to-version -custom2a-s390 --revision 2.6.26-19lenny2 \
+      --initrd kernel_image
+     cd ..
+     dpkg -i linux-image-2.6.26-custom2a-s390_2.6.26-19lenny2_s390.deb
+     rm linux-image-2.6.26-custom2a-s390_2.6.26-19lenny2_s390.deb
+     shutdown -r now;exit
+</pre>
+<p>
+Something like the above will do nicely.&nbsp;
+Notice that the "append-to-version"
+flag needs to be changed slightly each time.&nbsp;
+If you have third-party modules
+to make, add the "modules_image" target to make-kpkg as well, and add
+"dpkg&nbsp;-i" commands to install the
+modules after you install the kernel.&nbsp;
+Typically, your boot loader is configured to boot two kernels: the primary
+kernel, which is the one most recently installed, and one alternate one,
+which is the next most recently installed one.&nbsp;
+If you didn't deinstall the
+stock kernel last time, you should probably do so now.&nbsp;
+You've got three kernel
+images on your machine now: the original stock kernel, your first custom
+kernel, and your second custom kernel.&nbsp;
+And only the two custom ones are
+bootable at this point, unless you've been customizing your boot loader
+configuration as well.
+</p>
+<br>&nbsp;
+<pre>
+     aptitude -R purge linux-image-2.6.26-2-s390
+</pre>
+<p>
+Once your first custom kernel rolls off the boot loader menu, deinstall it
+in a similar manner.
+</p>
+<p>
+OK, you've been happily running your custom kernel for several months now,
+and you get a security update notice from Debian.&nbsp;
+You update the list of
+available packages via "dselect&nbsp;update", then you run
+"aptitude&nbsp;-R&nbsp;full-upgrade".&nbsp;
+And when you do, you notice that an updated kernel
+source package has been downloaded and installed.&nbsp;
+What do you do now?
+</p>
+<p>
+Well, it's time to clean house.&nbsp;
+Of course
+you've already run "aptitude&nbsp;clean", right?&nbsp;
+(You should always run
+"aptitude&nbsp;clean" after running "aptitude&nbsp;-R&nbsp;full-upgrade".)
+</p>
+<br>&nbsp;
+<pre>
+     cd /usr/src
+     rm -r linux-source-2.6.26/*
+     rm -r linux-source-2.6.26/.*
+</pre>
+<p>
+(You will get error messages from the second command about not being able to
+remove "." and "..".&nbsp;
+That's OK.&nbsp;
+You don't want it to remove "." or ".."!)
+</p>
+<br>&nbsp;
+<pre>
+     tar -xjf linux-source-2.6.26.tar.bz2
+     rm linux-source-2.6.26.tar.bz2
+</pre>
+<p>
+Now proceed to step 7, with some minor variations.&nbsp;
+The name of the config
+file that gets copied from the /boot directory to .config in the current
+directory must change to match the current kernel config file.&nbsp;
+You must
+re-run "make&nbsp;menuconfig", even if you don't change a thing in the kernel
+configuration, because some files get created by "make&nbsp;menuconfig" that
+make-kpkg needs, and you just erased them.&nbsp;
+You must then re-run
+"make-kpkg&nbsp;clean".
+</p>
+<p>
+The "--append-to-version" flag must change slightly to not conflict with any
+of the kernel versions you currently have installed.&nbsp;
+That will change the
+name of the package file created;
+so the "dpkg&nbsp;-i" command will change too.&nbsp;
+And of course, "aptitude&nbsp;-R&nbsp;purge"
+must change to de-install the correct old
+version of the kernel.&nbsp;
+By now you get the idea.
+</p>
+<p>
+<strong>Note:</strong> sometimes the stock kernel configuration file
+will change with a security update.&nbsp;
+The powers that be may have decided to change a kernel configuration
+option for security reasons.&nbsp;
+In that case, if you want to keep your custom kernel configuration file
+in sync with the latest stock kernel, you will need to install the
+latest stock kernel image in order to get that config file.&nbsp;
+That's a little like buying Maxwell House to get a cup of coffee,
+but I don't know how else to get that config file.&nbsp;
+Once you have that config file copied over as
+/usr/src/linux-source-2.6.26/.config,
+you can de-install the stock kernel again.&nbsp;
+Depending on which boot loader you use, de-installing the most recently
+installed kernel image, even though it's not the currently running kernel,
+may leave your boot loader in a broken state.&nbsp;
+For example, on the s390 platform you will need to perform the
+following steps to fix your boot loader after the above scenario.
+</p>
+<br>&nbsp;
+<pre>
+     cd /boot
+     mv initrd.img.old initrd.img
+     mv vmlinuz.old vmlinuz
+     zipl
+</pre>
+<p>
+If you had two bootable kernel images installed prior to installing (and
+then de-installing) the stock kernel image, you will also need
+to re-create the proper symbolic links for initrd.img.old and
+vmlinuz.old prior to running zipl.&nbsp;
+For example, let's say that prior to installing that stock kernel image
+you had vmlinuz pointing to vmlinuz-2.6.26-custom2i-s390,
+initrd.img pointing to initrd.img-2.6.26-custom2i-s390,
+vmlinuz.old pointing to vmlinuz-2.6.26-custom2h-s390,
+and initrd.img.old pointing to initrd.img-2.6.26-custom2h-s390.&nbsp;
+After installing linux-image-2.6.26-2-s390, vmlinuz points to
+vmlinuz-2.6.26-2-s390, initrd.img points to initrd.img-2.6.26-2-s390,
+vmlinuz.old points to vmlinuz-2.6.26-custom2i-s390, and
+initrd.img.old points to initrd.img-2.6.26-custom2i-s390, and
+zipl is re-run.&nbsp;
+Nothing points to vmlinuz-2.6.26-custom2h-s390 or
+initrd.img-2.6.26-custom2h-s390 anymore, but the files are still there.
+</p>
+<p>
+When you run "aptitude&nbsp;-R&nbsp;purge&nbsp;linux-image-2.6.26-2-s390",
+this causes vmlinuz-2.6.26-2-s390 and initrd.img-2.6.26-2-s390 to be
+deleted, and the symbolic links that point to them,
+vmlinuz and initrd.img, respectively, are also deleted; since they
+are now broken links.&nbsp;
+zipl is not rerun.&nbsp;
+To restore your boot loader back to the state it was in
+prior to installing linux-image-2.6.26-2-s390,
+enter the following sequence of commands:
+</p>
+<br>&nbsp;
+<pre>
+     cd /boot
+     mv vmlinuz.old vmlinuz
+     mv initrd.img.old initrd.img
+     ln -s vmlinuz-2.6.26-custom2h-s390 vmlinuz.old
+     ln -s initrd.img-2.6.26-custom2h-s390 initrd.img.old
+     zipl
+</pre>
+<p>
+lilo also uses symbolic links and needs similar processing.&nbsp;
+grub, since it does not use symbolic links, requires less fuss.
+</p>
+<p>
+Happy Kerneling!&nbsp;
+If any one has any comments, suggestions, complaints, corrections,
+or any other form of feedback, please drop me a line at
+<a href="mailto:zlinuxman@wowway.com">zlinuxman@wowway.com</a>.
+</p>
+</body>
+</html>

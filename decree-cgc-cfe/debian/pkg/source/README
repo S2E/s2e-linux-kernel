@@ -1,0 +1,21 @@
+
+    $Id: README.source,v 1.2 1999/10/08 10:33:41 srivasta Exp $
+
+ This is the Debian GNU/Linux prepackaged version of the Linux kernel
+ sources. An attempt has been made to keep this directory as close to
+ the pristine sources as possible, modulo any patches that the Debian
+ maintainer has deemed required. 
+
+	You may treat this directory just as you would any source tree
+ that you download from a primary Linux kernel archive site.
+
+	If you wish to create a kernel image Debian package, e.g.:
+ ../=ST-image=V_=V-C1.0_=A.deb
+ please read /usr/share/doc/kernel-source-=V/README.gz fileand follow
+ directions. 
+
+	The file /usr/share/doc/kernel-source-=V/Rationale.gz contains
+ reasons why you may wish to do so.
+
+Manoj Srivastava  <srivasta@debian.org> <http://www.datasync.com/%7Esrivasta/>
+Key C7261095 fingerprint = CB D9 F4 12 68 07 E4 05  CC 2D 27 12 1D F5 E8 6E

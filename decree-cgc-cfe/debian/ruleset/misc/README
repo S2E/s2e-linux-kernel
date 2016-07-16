@@ -1,0 +1,33 @@
+This directory contains various Makefile snippets which used to be in
+the variable setting part of the monolithic rules file, and then went
+into local-vars.mk, and now have been pulled off into their own
+section.
+
+checks.mk: Various checks that would let the build process detect and
+           abort on various error conditions.
+
+config.mk: Various internal variable set based on defaults and the
+           user configuration files, or from environment vars.
+
+defaults.mk: This file sets default values for variables _before_ the
+             user configuration files are read.
+
+initrd.mk: This snippet uses hard coded version based heuristics to
+           determine which set of tools would be viable for providing
+           an initrd or initramdisk for the kernel being built, if
+           initrd's are selected by the user as desired.
+
+modules.mk: This file deals with setting up variables, looking at
+            directories, and creating a list of valid third party
+            modules available for the kernel being built.
+
+pkg_names.mk: This file sets up package names for the packages we can
+              build (based on kernel version), the locations under
+              ./debian where these packages shall be built, and the
+              corresponding relative directory paths
+
+version_vars.mk: This file looks at the top level kernel Makefile, and
+                 extracts the components of the version string. It
+                 uses the kernel Makefile itself, so it takes into
+                 account everything the kernel Makefile itrself pays
+                 attention to.

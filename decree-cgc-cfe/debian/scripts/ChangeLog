@@ -1,0 +1,6 @@
+2005-11-02  Manoj Srivastava  <srivasta@debian.org>
+
+	* kpkg-vercheck (main):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Emit a warning if called with an empty argument. 
+

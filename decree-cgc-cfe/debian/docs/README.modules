@@ -1,0 +1,239 @@
+
+		Add on modules and the kernel-package
+                === == ======= === === ==============
+
+	There are a number of add-on modules (that is, kernel modules
+ are developed apart from the Linux kernel and do not appear in the 
+ mainstream kernel sources). Notables, at the time of writing, are the 
+ pcmcia-cs and and the alsa sound modules.
+
+	Most of these modules need to be compiled for each kernel
+ version; they are very dependent on kernel structures. It was
+ suggested that it would be nice to be able to build the add-on
+ modules whenever one created a new kernel, and kernel-package
+ provides some mechanisms to do so for co-operating add-on modules. 
+
+	In order for this to work, the add-on modules must appear in
+ a standard location, chosen to be $(MODULE_LOC)/<mod-name>/
+ (MODULE_LOC defaults to /usr/src/modules, and can be set either in
+ the environment or the configuration file), and must arrange to be
+ manipulated by the kernel-package mechanisms.
+
+USER INSTRUCTIONS
+==== ============
+
+     1)   install the source for your module package in a subdirectory of 
+          the $(MODULE_LOC)[/usr/src/modules] directory.  Use a
+          symbolic link to the actual source tree if you must.
+
+     2)   Get kernel sources from your favorite location. (For
+          pre-packaged kernels, it may be possible to build third
+          party modules by getting the kernel-headers package that
+          corresponds to the kernel-image package you have installed,
+          and pointing the build system of the kernel headers -- some
+          packaged modules packages provide an easy way to use the
+          kernel-headers packages, by allowing you to specify it like so:
+            [cd $MODULE_LOC/$module/;
+              ./debian/rules  KSRC=/usr/src/kernel-headers-X.Y.ZZ binary
+             ])
+
+     3)   Make sure you have the versions of packages as recommended
+          in the Documentation/Changes file. 
+
+     4)   Unpack the kernel sources.  Change dir to the unpacked sources.
+
+     5)   If you are building a kernel that is custom configured to your
+          specifications at this time, go ahead and configure the
+          kernel with `make config', `make menuconfig', or `make
+          xconfig.'  To build a new kernel-image package, execute:
+               make-kpkg --revision number kernel_image
+          This will generate a kernel-image-<kernel version> deb file
+          in the parent directory.  Here number (the argument supplied
+          after the --revision flag) is a version number for your
+          custom built kernel.  You may also do this on the fly by
+          setting the DEBIAN_REVISION environmental variable.  It is
+          important that you choose the revision number in such a way
+          that a generic kernel-image package will not override the
+          custom package while using dselect (or `dpkg -BOGiE').  I
+          recommend a two-level scheme where the major level starts
+          with a letter.  One such scheme is your (short) host name
+          followed by a dot (.) and a number.  For example, if your
+          machine is named myhost, you would use --revision myhost.1
+          in the command line.  If you had to rebuild your custom
+          kernel, you would use --revision myhost.2 and so on.  See
+          /usr/share/doc/kernel-package/README.gz for more information on
+          revision numbers.
+
+     6)   To build the actual module packages, execute:
+               make-kpkg modules_image
+          This will generate a  <name>-modules-<kernel version>.deb file in
+          the parent directory. The revision you supplied while building the
+          kernel shall be used automatically.
+
+          If you are using an official Debian kernel-image with specific
+          options (kernel-image-x.y.z-foo), you should append this version
+          for modules compilation:
+               make-kpkg --append-to-version -foo modules_image
+          (e.g. of foo at this time are "386", "k6", "586tsc"...)
+          A revision number based on the date shall be used automatically.
+          You can however force the revision number using the --revision
+          flag (see 3.1).
+
+     7) Install the two newly created deb files (you can use `dpkg -i
+          file').
+
+     8)   Clean the source trees:
+               make-kpkg modules_clean clean 
+
+MODULE MAINTAINER INSTRUCTIONS
+====== ========== ============
+
+     1)   install the source for your module package in a subdirectory of 
+          the $(MODULE_LOC)[/usr/src/modules] directory.  Use a
+          symbolic link to the actual source tree if you must.
+
+     2)   if you are modules maintainer and want to build the set of
+          binary modules packages that will work with each of the
+          variants of the kernel that are in the archive, you want to
+          use the sources for the official kernel-images.
+          
+          apt-get source kernel-image-2.4.18-386 (substitute as
+           appropriate for kernel version and architecture)
+
+     3)   satisfy the build-deps of that image.
+
+     4)   debian/rules unpack
+
+     5) If you are building a whole set of modules for all
+         sub-architectures, you can do something like:
+           for i in 386 586tsc 686 686-smp k6 k7; do
+	     cd build-$i
+	     make-kpkg modules --append_to_version -$i
+	     make-kpkg modules_clean
+	     cd ..
+          done
+          Change the list of flavours as appropriate for your
+          architecture of course. See configs in config/ directory.
+          cp /boot/config-<kernel version> build-$i.config, etc, as needed. 
+
+     6)  Test, sign and upload the various .changes and .deb files
+         that result.
+
+======================================================================
+
+        kernel-package provides for four targets for the use of
+ stand-alone kernel modules packages.
+
+	The special targets to give to make-kpkg are:
+ a) modules-image modules_image:   only generate module binary
+				   packages. Please remember to clean
+				   the modules after the build; see
+				   the sample files for an example. 
+ b) modules:                       generate the modules packages and
+                                   sign them with dchanges (this
+                                   creates the source and diff packages
+                                   as well)
+ c) modules-config modules_config: only configure the module
+ d) modules-clean  modules_clean:  Clean the modules source tree, and
+				   undo all changes made by the above
+				   commands. 
+	
+	So, add to the 
+4% fakeroot make-kpkg --revision=custom.1.0 kernel_image 
+4a% fakeroot make-kpkg --revision=custom.1.0 modules_image,
+        and remember to install the modules (after you have installed
+ the kernel-image) by saying 
+5# dpkg -i ../kernel-image-X.XXX_1.0_<arch>.deb
+5a# dpkg -i $(MODULE_LOC:-/usr/src/modules)/<mode-name>-<version>.deb
+	
+MODULE Packaging hints
+====== ========= =====
+
+        make-kpkg arranges to cd into each modules top directory,
+ $(MODULE_LOC:-/usr/src/modules)/<mod-name>/, and runs ./debian/rules
+ <target>.
+
+ <target> can be one of:                                                       
+ kdist_image           Create the binary image of the module                   
+                       * Called for make-kpkg modules_image                    
+ kdist                 Generate the modules packages and sign them             
+                       * Called for make-kpkg modules                          
+ kdist_configure       Configure the modules packages                          
+                       * Called for make-kpkg modules_config                   
+ kdist_clean           Clean the modules source tree                           
+                       * Called for make-kpkg modules_clean                    
+                                                                  
+	 Starting with kernel version 2.6.X, the build process is
+ for third party modules has been modified; now modules are expected
+ to build in the kernel sources dir, and you set the SUBDIR arg to
+ point to the source for the module itself. This arranges for the
+ kernel makefiles to do all the boilerplate work of building/running
+ modpost, dependencies, et cetera.  Here's the "new" way of building a
+ kernel module (both as used by alsa-source and as recommended by the
+ kbuild maintainer):
+                                                                                
+ ifdef NEW_KBUILD                                                               
+         $(MAKE) -C $(CONFIG_SND_KERNELDIR) SUBDIRS=$(MAINSRCDIR)/kbuild modules
+ else                                
+
+	The problem is that unless the module passes in the same
+ EXTRAVERSION=XYZ argument that the main kernel build process did,
+ include/linux/version.h shall be regenerated, with a different value
+ now than when the kernel was compiled. The only way to avoid this is
+ to make sure the module passes EXTRAVERSION also; the 2.6 kernel
+ makefile is very enthusiastic about making sure version.h is up to
+ date.
+
+	So, make-kpkg now passes a new parameter, KPKG_EXTRAV_ARG, to
+ the module; the value is either empty, or a string like
+  "EXTRAVERSION=X.Y.Z". The idea is that you can call 
+     $(MAKE) $(KPKG_EXTRAV_ARG) ... 
+ and have the same version.h info as the main kernel image does.
+
+ 	Additionally, the following information is provided in the
+ environment:
+ a) KVERS  Contains the kernel version
+ b) KSRC   Contains the location of the kernel sources 
+ c) KMAINT Contains the Name of the maintainer to pass to PGP
+ d) KEMAIL Contains the email address of the maintainer
+ e) KPKG_DEST_DIR Contains the destination directory where the .debs are put
+ f) KDREV  Contains the Debian revision used for the kernel image
+ g) KPKG_MAINTAINER Contains the Name of the maintainer (may be different from 
+                    KMAINT, since the latter can be a key id)
+
+	Additionally, the following variables may also be present in the 
+ environment:
+   h) APPEND_TO_VERSION This contains a string to be appended to the 
+                        EXTRAVERSION variable. This is already factored 
+                        into the KVERS variable above.
+   i) INT_SUBARCH Contains the SUB arch if any if and only if the 
+                  ARCH_IN_NAME variable has been set. I suspect that the
+                  user wants the .deb names to be modified (but not the
+                  kernel version or the location of the dir in which to
+                  find modules if this is set. This is *NOT* factored
+                  into KVERS above, and is there to be used at your
+                  discretion. 
+   j) UNSIGN_CHANGELOG  A boolean
+   k) UNSIGN_SOURCE     A boolean
+   l) ROOT_CMD          a program, like sudo or fakeroot
+   m) root_cmd This is a misnomer. That variable actually holds arguments
+               for dpkg, specifically, -uc -us -r<blah>, or any
+               combination thereof, asd requested by the user. This
+               may be set in the config file, so if this variable
+               exists, it incorporates and over rides the env vars
+               UNSIGN_CHANGELOG, UNSIGN_SOURCE, and ROOT_CMD
+   n) CONCURRENCY_LEVEL The setting from the user passed in to pass to
+      make -j. kernel-package itself does not call the modules target
+      with -j since it does not know if that is safe; it is up to
+      module maintainers to see if this parallel compilation setting
+      may be used.
+   o) KPKG_EXTRAV_ARG A string. It is either empty, or contains a
+      directive to set the EXTRAVERSION variable.
+
+	Have fun,
+
+	manoj
+-- 
+Manoj Srivastava  <srivasta@acm.org> <http://www.datasync.com/%7Esrivasta/>
+Key C7261095 fingerprint = CB D9 F4 12 68 07 E4 05  CC 2D 27 12 1D F5 E8 6E
+

@@ -1,0 +1,210 @@
+.\" Hey, Emacs! This is an -*- nroff -*- source file.
+.\" Copyright (c) 2004 Manoj Srivastava <srivasta@debian.org>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
+.\" USA.
+.\"
+.TH LINUX 1 "Oct 1 2004" "Debian" "Debian GNU/Linux manual"
+.SH NAME
+linux \- User mode Linux kernel \-\- Run Linux inside itself.
+.SH SYNOPSIS
+.B linux
+.I [options]
+.B [arguments]
+.SH DESCRIPTION
+This manual page explains the user mode linux utility.  User-Mode
+Linux is a safe, secure way of running Linux versions and Linux
+processes. Run buggy software, experiment with new Linux kernels or
+distributions, and poke around in the internals of Linux, all without
+risking your main Linux setup. 
+.PP
+Normally, the Linux Kernel talks straight to your hardware (video
+card, keyboard, hard drives, etc), and any programs which run ask the
+kernel to operate the hardware. The User Mode Linux Kernel is
+different; instead of talking to the hardware, it talks to a `real'
+Linux kernel (called the `host kernel'), like any other program.
+Programs can then run inside User-Mode Linux as if they were running
+under a normal kernel.
+.PP
+User-Mode Linux gives you a virtual machine that may have more
+hardware and software virtual resources than your actual, physical
+computer. Disk storage for the virtual machine is entirely contained
+inside a single file on your physical machine. You can assign your
+virtual machine only the hardware access you want it to have. With
+properly limited access, nothing you do on the virtual machine can
+change or damage your real computer, or its software. 
+.SH OPTIONS
+.TP 20
+.BR \-\-showconfig
+Prints the config file that this UML binary was generated from.
+.TP
+.BR \-\-version
+Prints the version number of the kernel.
+.TP
+.BR \-\-help
+Prints a help message.
+.SH ARGUMENTS
+.TP
+.BR iomem=<name>,<file>
+Configure <file> as an IO memory region named <name>.
+
+.TP
+.BR mem=<Amount of desired ram>
+This controls how much "physical" memory the kernel allocates
+for the system. The size is specified as a number followed by
+one of 'k', 'K', 'm', 'M', which have the obvious meanings.
+This is not related to the amount of memory in the host.  It can
+be more, and the excess, if it's ever used, will just be swapped out.
+.RS 
+.I  Example: mem=64M
+.RE
+
+.TP
+.BR root=<file containing the root fs>
+This is actually used by the generic kernel in exactly the same
+way as in any other kernel. If you configure a number of block
+devices and want to boot off something other than ubd0, you 
+would use something like:
+.RS 
+.I          root=/dev/ubd5
+.RE
+
+
+.TP 
+.BR mode=tt
+When both CONFIG_MODE_TT and CONFIG_MODE_SKAS are enabled, this option
+forces UML to run in tt (tracing thread) mode.  It is not the default
+because it's slower and less secure than skas mode.
+
+
+.TP
+.BR umid=<name>
+This is used to assign a unique identity to this UML machine and
+is used for naming the pid file and management console socket.
+
+.TP
+.BR uml_dir=<directory>
+The location to place the pid and umid files.
+
+
+.TP
+.BR initrd=<initrd image>
+This is used to boot UML from an initrd image.  The argument is the
+name of the file containing the image.
+
+.TP
+.BR ssl[0-9]*=<channel description>
+Attach a console or serial line to a host channel.  See
+.I http://user-mode-linux.sourceforge.net/input.html 
+for a complete description of this switch.
+
+
+.TP
+.BR eth[0-9]+=<transport>,<options>
+Configure a network device.
+
+.TP
+.BR mconsole=notify:<socket>
+Requests that the mconsole driver send a message to the named Unix
+socket containing the name of the mconsole socket.  This also serves
+to notify outside processes when UML has booted far enough to respond
+to mconsole requests.
+
+.TP
+.BR ubd<n>=<filename>
+This is used to associate a device with a file in the underlying
+filesystem. Usually, there is a filesystem in the file, but that's not
+required. Swap devices containing swap files can be specified like
+this. Also, a file which doesn't contain a filesystem can have its
+contents read in the virtual machine by running dd on the device. n
+must be in the range 0 to 7. Appending an 'r' to the number will cause
+that device to be mounted read-only. For example
+.I ubd1r=./ext_fs. 
+Appending an 's' (has to be _after_ 'r', if there is one) will cause
+data to be written to disk on the host immediately.
+
+.TP
+.BR fakehd
+Change the ubd device name to "hd".
+
+.TP
+.BR dsp=<dsp device>
+This is used to specify the host dsp device to the hostaudio driver.
+The default is 
+.I "/dev/sound/dsp".
+
+.TP
+.BR term=<terminal emulator>,<title switch>,<exec switch>
+Specifies an alternate terminal emulator to use for the debugger,
+consoles, and serial lines when they are attached to the xterm channel.
+The values are the terminal emulator binary, the switch it uses to set
+its title, and the switch it uses to execute a subprocess,
+respectively.  The title switch must have the form 
+.I '<switch> title',
+not 
+.I '<switch>=title'.  
+Similarly, the exec switch must have the form
+.I '<switch> command arg1 arg2 ...'.
+The default values are 
+.I 'term=xterm,-T,-e'.  
+Values for gnome-terminal are 
+.I 'term=gnome-terminal,-t,-x'.
+
+
+.TP
+.BR con[0-9]*=<channel description>
+Attach a console or serial line to a host channel.  See
+.I http://user-mode-linux.sourceforge.net/input.html 
+for a complete description of this switch.
+
+
+.TP
+.BR aio=2.4
+This is used to force UML to use 2.4-style AIO even when 2.6 AIO is
+available.  2.4 AIO is a single thread that handles one request at a
+time, synchronously.  2.6 AIO is a thread which uses 2.5 AIO interface
+to handle an arbitrary number of pending requests.  2.6 AIO is not
+available in tt mode, on 2.4 hosts, or when UML is built with
+.I /usr/include/linux/aio_abi 
+not available.
+
+
+.TP
+.BR hostfs=<root dir>,<flags>,...
+This is used to set hostfs parameters.  The root directory argument
+is used to confine all hostfs mounts to within the specified directory
+tree on the host.  If this isn't specified, then a user inside UML can
+mount anything on the host that's accessible to the user that's running
+it.
+.PP
+The only flag currently supported is 'append', which specifies that all
+files opened by hostfs will be opened in append mode.
+.SH "SEE ALSO"
+.I http://user-mode-linux.sourceforge.net/
+.SH AUTHOR
+.PP 
+User-mode Linux was written by Jeff Dike and others. 
+.PP 
+This manual page was written by Manoj Srivastava <srivasta@debian.org>,
+for the Debian GNU/Linux system.
+
+.\" arch-tag: 7e4cdcae-4249-4e62-924b-5058781162dc
+.\"    
+.\"

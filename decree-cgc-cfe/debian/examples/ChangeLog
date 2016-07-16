@@ -1,0 +1,14 @@
+2006-03-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* sample.force-build-link.sh: Added a new sample postinst script
+
+2005-12-24  Manoj Srivastava  <srivasta@debian.org>
+
+	* kernel_grub_conf.sh (kernel_boot_options):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-96
+		  Make sure we do not echo anything to STDOUT  
+
+	* kernel_grub_rm.sh (vmlinuz_location):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-96
+		  Make sure we do not echo anything to STDOUT 
+

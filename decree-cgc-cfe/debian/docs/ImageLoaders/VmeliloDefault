@@ -1,0 +1,28 @@
+
+
+If the post install script finds VMELILO on the system (/sbin/vmelilo),
+it checks to see if a configuration file (/etc/vmelilo.conf) already
+exists. If not, it creates a boilerplate VMELILO configuration file
+that will work with the image just installed, as follows.
+
+It looks into /etc/fstab, looking for the device that the root (/)
+directory is on, ignoring swap, NFS and proc file systems it assumes
+that the drive that the root device is on should be where VMELILO
+installs the boot sector (this is not good for all installations, but
+it gives a starting point) and inserts lines like (assuming the root
+directory is on /dev/sda2):
+----------------------------------------------------------------------
+boot      = /dev/sda
+root      = /dev/sda2
+----------------------------------------------------------------------
+
+and then appends the following:
+----------------------------------------------------------------------
+default   = Linux
+delay     = 2
+
+[boot]
+label     = Linux
+image     = /vmlinuz
+read-only
+----------------------------------------------------------------------

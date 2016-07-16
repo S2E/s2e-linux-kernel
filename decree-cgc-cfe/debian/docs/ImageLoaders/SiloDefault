@@ -1,0 +1,26 @@
+
+  $Id: SiloDefault,v 1.1 1998/03/05 22:45:34 srivasta Exp $
+
+If the post install script finds SILO on the system (/sbin/silo),
+it checks to see if there already exists a configuration file
+/etc/silo.conf. If not, a boilerplate SILO configuration file that 
+will work with the image just installed, as follows.
+
+It looks into /etc/fstab, looking for the device that the root (/)
+directory is on, also, it looks for any partition that may have a boot
+sector installed by SILO, ignoring swap, NFS and proc file systems and
+floppy drives (if no SILO sector is found, it assumes that the drive
+that the root device is on should be where SILO places the block (this
+is not good for all installations, but it gives a starting point) and
+inserts lines like (assuming the root directory is on /dev/sda4):
+----------------------------------------------------------------------
+partition=4 root=/dev/sda4
+----------------------------------------------------------------------
+
+and then appends the following:
+----------------------------------------------------------------------
+timeout=100
+image=/vmlinuz
+label=Linux
+read-only
+----------------------------------------------------------------------

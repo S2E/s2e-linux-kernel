@@ -1,0 +1,180 @@
+2008-11-15  Manoj Srivastava  <srivasta@debian.org>
+
+	* amd64.mk (kelfimagedest): master: When building a current kernel
+		  with the in-kernel xen code enabled on amd64,
+		  kernel-package does not recognize this correctly because
+		  it matches on a config variable which apparently
+		  is no longer set (or maybe even was never used
+		  in the in-kernel xen code). Add an extra clause to cater
+		  to the in kernel xen code.
+
+2007-11-30  Manoj Srivastava  <srivasta@debian.org>
+
+	* i386.mk (DEBCONFIG):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-13
+		  use DEB_HOST_ARCH_OS, not DEB_HOST_GNU_SYSTEM 
+
+	* amd64.mk (KERNEL_ARCH):
+		  srivasta@debian.org--lenny/kernel-package--devel--11.0--patch-13
+		  use DEB_HOST_ARCH_OS, not DEB_HOST_GNU_SYSTEM
+
+2007-02-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* armel.mk (DEBCONFIG): New architecture make snippet for the armel arch
+
+2006-06-16  Manoj Srivastava  <srivasta@debian.org>
+
+	* what_is_ppc_called_today.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-158
+		  New file with the powerpc kernel arch determination code
+
+	* powerpc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-158
+		  Moved out the bit of code that determines what the
+		  kernel arch is, based on version and subarch.  
+
+2006-05-02  Manoj Srivastava  <srivasta@debian.org>
+
+	* sparc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-153
+		  Do not set ARCH_IN_NAME if append to version is nul 
+
+2006-04-30  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk (ARCH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-152
+		  Provide $(EXTRAV_ARG) and  $(CROSS_ARG)  to the inage
+		  post processing script
+
+	* amd64.mk (KERNEL_ARCH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-151
+		  The correct kernel  configuration var to check for is
+		  CONFIG_X86_64_XEN, not CONFIG_X86_XEN.  
+
+2006-04-20  Manoj Srivastava  <srivasta@debian.org>
+
+	* amd64.mk (target):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-148
+		  Added untested support for Xen on amd64, based on i386
+		  changes 
+
+2006-04-13  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk (INSTALL_MKVMLINUZ_PATH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-144
+		  Specify the post-processing to be done at the point we
+		  indicate something is needed.  Also, change processing
+		  for new kernels.
+
+2006-04-12  Manoj Srivastava  <srivasta@debian.org>
+
+	* i386.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-142
+		  Add in separate stanzas for a subarch Xen, versus the
+		  normal i386  build. We change boot loader definitions,
+		  dependencies, targets, and image destinations.  
+
+2006-01-28  Manoj Srivastava  <srivasta@debian.org>
+
+	* armeb.mk (target): Added support for armeb
+
+2005-12-31  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk (INSTALL_MKVMLINUZ_PATH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-105
+		  Set it to a value relative to the top of the image
+		  package, instead of an absolute path, and use the stem
+
+2005-12-28  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-103
+		  New, consolidated snippet for powerpc, which sets kernel
+		  arch based on kernel versions. Removed ppc.mk and
+		  powerpc.mk
+
+2005-12-26  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk (KERNEL_ARCH):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-99
+		  if the subarch is powerpc or powerpc32, the kernel arch
+		  is really ppc. 
+
+2005-12-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* powerpc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-99
+		  New file, for >2.6.15 kernels. 
+
+2005-12-09  Manoj Srivastava  <srivasta@debian.org>
+
+	* arm.mk: Added missing arm.mk. Somehow, this file had gone
+		  missing. 
+
+2005-11-02  Manoj Srivastava  <srivasta@debian.org>
+
+	* xen.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables.  
+
+	* uml.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables.  
+
+	* sparc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* s390.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* ppc64.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* ppc.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables.  
+
+	* mipsel.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* mips.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* m68k.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* m32r.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* ia64.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* i386.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* hppa.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+	* amd64.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables.
+
+	* alpha.mk:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  New file to handle the architecture specific variables. 
+
+2005-11-01  Manoj Srivastava  <srivasta@debian.org>
+
+	* README.txt: New file. Describes what the files in this directory
+		  do.
+

@@ -1,0 +1,53 @@
+#! /bin/sh
+#                               -*- Mode: Sh -*- 
+# create_link --- 
+# Author           : Manoj Srivastava ( srivasta@glaurung.internal.golden-gryphon.com ) 
+# Created On       : Sun Nov  6 10:21:35 2005
+# Created On Node  : glaurung.internal.golden-gryphon.com
+# Last Modified By : Manoj Srivastava
+# Last Modified On : Sun Nov  6 10:21:35 2005
+# Last Machine Used: glaurung.internal.golden-gryphon.com
+# Update Count     : 0
+# Status           : Unknown, Use with caution!
+# HISTORY          : 
+# Description      : This is a pure example script, and is not actually used -- yet.
+# 
+# arch-tag: 493060cf-3945-44d1-a525-f891b25ac6c5 
+#
+
+set -e
+
+if [ $# -ne 2 ]; then
+    echo Usage: $0 version location
+    exit 2
+fi
+
+
+my_version="=V";                # automatically substituted at build
+package_name="=ST-headers-=V";  # automatically substituted at build
+
+version="$1"
+vmlinuz_location="$2"
+
+# We should only do any work if the correct kernel image is being installed
+if [ "$my_version" != "$version" ]; then
+    exit 0;                     # Not a relevant version being installed
+fi
+
+# If the build link exists, we should do nothing: the kernel image
+# postinst would have removed any dangling links by now, so any
+# existing link is valid -- perhaps the kernel was compiled on this
+# machine, and the link points to a real build tree?
+if [ -e "/lib/modules/$version/build" ]; then
+    exit 0
+fi
+
+# We need to be run as root
+test $(id -u) = 0 || (echo need root priviledges; exit 1)
+
+if [ -d "/lib/modules/$version" ] && [ -d "/usr/src/$package_name" ]; then
+    ln -s "/usr/src/$package_name" "/lib/modules/$version/build"
+fi
+
+exit 0;
+

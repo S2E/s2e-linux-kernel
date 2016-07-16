@@ -1,0 +1,35 @@
+Source: kernmod
+Section: devel
+Priority: extra
+Maintainer: Wichert Akkerman <wakkerma@debian.org>
+Standards-Version: 3.6.0
+
+Package: kernmod-source
+Architecture: all
+Depends: kernmod-modules
+Recommends: kernmod-common
+Description: sourcecode for kernmod kernel modules
+ The kernmod package is a skeleton for creating packages containing kernel
+ modules.
+ .
+ This packages contains the source-code for the kernel modules.
+
+Package: kernmod-common
+Architecture: all
+Suggests: kernmod-source
+Description: common files for kernmod modules
+ The kernmod package is a skeleton for creating packages containing kernel
+ modules.
+ .
+ This packages contains the common files that are used by the modules. They
+ are in a seperate package so that you can have modules for different kernels
+ installed at the same time.
+
+Package: kermod-modules-${kpkg:Kernel-Version}
+Depends: kernmod-common
+Provides: kernmod-modules
+Description: kernel modules for kernmod
+ The kernmod package is a skeleton for creating packages containing kernel
+ modules.
+ .
+ This package contains the compiled kernel modules for kernel ${kpkg:Kernel-Version}

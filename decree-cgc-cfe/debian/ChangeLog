@@ -1,0 +1,565 @@
+2007-01-17  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Depends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--versionfix-4
+		  In release version 10.063, I cleaned up the  postinst as
+		  while I was at it, going with readlink -q -m instead of
+		  the built in version. Since -m was a flag not present in
+		  Sarge's coreutils, this means the generated image files
+		  should have a versioned dependency on coreutils. The
+		  previous versioned dependency was not strict enough,
+		  updated to a version that works. 
+
+2006-11-04  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Depends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-202
+		  Since the postinst now uses readlink -m, we  need to
+		  depend on coreutils newer than 5.2.1
+
+2006-08-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* templates.in (really-run-bootloader):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-171
+		  Ask whether to run the  default bootloader (typically
+		  lilo), or let the postinst hook script update grub
+		  later. 
+
+2006-07-23  Manoj Srivastava  <srivasta@debian.org>
+
+	* templates.in (Description):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-169
+		  change advice for where the old kernel modules should be
+		  moved to - do not move kernel modules to the same dir in
+		  /lib/modules 
+
+2006-06-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Conflicts):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-154
+		  Do not conflict with new user-mode-linux packages. 
+
+2006-03-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* templates.in (_Description):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-131
+		  Modified the preinst checks since we only check for the
+		  kernel modules, not the whole modules dir. 
+
+2005-12-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Package):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-94
+		  Make all references to kernel-* in control be really
+		  =ST-* references, since the actual package names are
+		  all affected by the stem 
+
+2005-11-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Recommends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Should not depend on a virtual package alone. added
+		  libc6-dev as an real alternate. 
+	  (Description):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Fixed to shut up lintian. 
+	  (Depends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Added a dependency for ${shlibs:Depends} 
+		  (Description):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+			  Break up a line since it likely causes the
+			  exceeds width  warning.  
+		  (Description):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+			  Split line to avoid going over 80 chars 
+
+	* templates.in (Type):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-56
+		  Types should be all lower case, as should boolean
+		  default values. 
+		  (Type):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-56
+			  Missed one. 
+
+2005-11-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* templates.in (Template):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-56
+		  Minor typo fix: $loader -> ${loader} 
+
+2005-11-03  Manoj Srivastava  <srivasta@debian.org>
+
+	* templates.in (Template):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-55
+		  New file. All the templates for the questions to be
+		  asked during kernel image package installation. 
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Since we now create a debconfisticated package,we
+		  include debconf related rules.   
+
+2005-11-02  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+			  Continued the process of skeletonizing the top
+			  level Makefile. Moved some more variables into
+			  their own files, and also  moved the top level
+			  policy mandated targets into a separate file (so
+			  one does  not have to worry about proper
+			  dependency relations between those targets).  
+
+2005-11-01  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Build-Depends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Added build dependencies on po-debconf and gettext, in
+		  preparation for the forthcoming debconfication of the
+		  kernel packages. 
+		  (Recommends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Add recommendations for  po-debconf and gettext in the
+		  source package. 
+		  (Pre-Depends):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-53
+		  Made the image package pre-depend on debconf,since the 
+		  preinst shall be using debconf to ask questions. 
+
+2005-10-28  Manoj Srivastava  <srivasta@debian.org>
+
+	* ruleset/local-vars.mk: Moved the definition of LIBLOC out of
+		  here to the rules file. 
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-48
+			  This is the one file that has faced the brunt of
+	                  the changes. Large chunks of it have been moved
+	                  out into separate chunks included in this file.
+	                  The major addition has been are mechanisms to
+  			  allow the file to be broken up. The parts
+	                  removed are
+			     o) dpkg-architecture variable are now moved 
+			        out to ruleset/common/archvars.mk 
+			     o) The variables set in the file have mostly 
+			        been moved to ruleset/local-vars.mk, which 
+			        shall be further broken up into smaller 
+	                        parts
+			     o) For example, the per arch variable 
+			        settings have already been moved out of  
+			        ruleset/local-vars.mk into 
+	                        ruleset/architecture.mk -- and shall be 
+	                        further fragmented into files in 
+	                        ruleset/arches/, so that it would be
+	                        easier to delegate ownership to domain
+	                        experts.
+			     o) The action/rules part of the file have
+	                        been broken out to ruleset/local.mk -- and
+			        shall be broken out into 
+	                        ruleset/common/targets.mk (which contain 
+	                        policy mandated targets,and their 
+	                        dependencies, and ruleset/actual_rules.mk,
+			        where the grunt work shall be done. It may
+			        make sense to further divide 
+	                        ruleset/actual_rules.mk into separate
+	                        files for images, headers, doc, and manual
+	                        packages. At a later stage, actually
+	                        installing files into 
+	                        ./debian/tmp-<something> shall be
+	                        separated out from the subsequent
+	                        packaging into separate targets 
+	                        (probably in the same file), to allow 
+	                        finer granularity for debugging.
+			(LIBLOC):
+				srivasta@debian.org--etch/kernel-package--devel--9.0--patch-48
+				We need the definition early 
+
+2005-10-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules (initrddep):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-42
+		  Calculate the initrd_cmd list, unless one has already
+		  been provided by the user, using the version numbers of
+		  the kernel being packaged, and then calculate the list
+		  of dependencies based on the list of commands
+		  selected. Also, propagate the list of  initrd commands
+		  and dependencies to the maintainer scripts as well. 
+
+	* image.prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added new variable for the initrd dependency, and also
+		  modified the variable ramdisk to be a space separated
+		  list of commands, not just a single command. 
+
+	* image.preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added new variable for the initrd dependency, and also
+		  modified the variable ramdisk to be a space separated
+		  list of commands, not just a single command. 
+	  (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added function to determine the list of viable
+		  initrd creation tools present on the target
+		  system, and use it to select which tool to use
+		  for creating the ram fs. 
+
+	* image.postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added new variable for the initrd dependency, and also
+		  modified the variable ramdisk to be a space separated
+		  list of commands, not just a single command. 
+
+	* image.postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added new variable for the initrd dependency, and also
+		  modified the variable ramdisk to be a space separated
+		  list of commands, not just a single command. 
+	  (find_inird_tool):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-44
+		  Added function to determine the list of viable
+		  initrd creation tools present on the target
+		  system, and use it to select which tool to use
+		  for creating the ram fs. 
+
+2005-10-24  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-42
+		  In the long run, make-kpkg should be a thin wrapper that
+		  merely populates                   a few environment
+		  variables, and then calls make. One should be  able to
+		  just grab the ./debian directory, and be able to
+		  re-create the .debpackages even on machines where
+		  kernel-package is not installed. Also started on the
+		  first step towards making ./debian/rules more modular,
+		  by eliminating many instances in which we were calling
+		  make recursively, when a simple target dependency does
+		  the work.  This should allow us to separate out the
+		  target dependencies required by the policy from the
+		  grunt work done to actually create the kernel-image
+		  package.  
+
+2005-10-23  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules (kimagesrc):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-42
+		  Well, calling kimage vmlinux.srec was breaking the
+		  postinst. However, kimage does not seem to be used
+		  anywhere except in determining the next value, namely,
+		  kimagesrc -- so I just added .srec to  kimagesrc, and
+		  thus eliminated the need for hacking the postinst. 
+
+2005-09-22  Manoj Srivastava  <srivasta@debian.org>
+
+	* image.preinst (check):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-40
+		  Add the running version check here.
+
+	* image.postinst (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-40
+		  remove running version check.
+
+	* image.postrm (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-39
+		  powerpc kernel packages don't remove cleanly. Rewrote
+		  the code for removing generated files in
+		  /lib/modules/ -- and added to the list of known
+		  files which should be removed. 
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-38
+			  one more update for mips, some machines can run
+			  a 64bit kernel but the firmware expects ELF32.  
+
+2005-08-31  Manoj Srivastava  <srivasta@debian.org>
+
+	* xen.postinst (realimageloc):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-36
+		  Start working on an initrd creation on install 
+
+	* rules (loaderdoc):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-36
+		  Fixed the name of the mips image
+
+2005-08-15  Manoj Srivastava  <srivasta@debian.org>
+
+	* Control (Description):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-34
+		  Added the kernel-manual package, and the associated
+		  header information. 
+
+	* rules (UML_DIR):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-33
+		  When building with --arch=um, the kernel modules are not
+		  placed in a version specific directory, but rather are
+		  placed directly under /usr/lib/uml/modules/ and thus
+		  prevents multiple uml packages from being installed. 
+		  Added the kernel-manual target
+
+2005-08-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* include.postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-29
+		  Don't run the postinst hook twice for header packages 
+
+	* rules (IMAGE_TOP):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-28
+		  Remove redundant grep 
+
+2005-07-28  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-27
+		  recognize the official architecture name
+		  'ppc64', requested by Andreas Jochens  
+
+2005-07-23  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules (IMAGE_TOP):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-26
+		  Add missing ;
+
+	* image.postinst (test_relative):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Added tracing statements to the function. 
+	  (really_move_image):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto 
+	  (really_reverse_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto. 
+	  (move_p):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto. 
+	  (really_move_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto. 
+	  (handle_missing_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto 
+	  (handle_non_symlinks):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Ditto 
+	  (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-25
+		  Fix a typo (quote string). Also add debugging trace. 
+
+2005-07-20  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules (IMAGE_TOP):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-24
+		  Fix unterminated variable reference 
+
+2005-07-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules (kimage):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-21
+		  Added new rules that call mkvmlinuz creation rules
+		  during kernel-image build
+	  (real_stamp_headers):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-21
+		  Since the scripts dir Makefile started nuking ./debian
+		  directories willy-nilly, we have been moving it out of
+		  place and replacing it with an innocuous
+		  replacement. Now that we are shipping the scripts dir in
+		  the headers package, and since the headers package does
+		  not have a ./debian directory we care about, we undo the
+		  move and ship the upstream Makefile.  
+
+2005-07-15  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  Typo fix: tihs -< this
+	  (real_stamp_headers):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  Added stuff that is required to create an image
+		  file from just the header files. This includes,
+		  amongst other things, Module.symvers, scripts/,
+		  Makefiles, Kconfig files,
+		  arch/$(KERNEL_ARCH)/kernel/asm-offsets.s. Hopefully,
+		  this is all that is needed to allow the
+		  compilation of third party modules. 
+	  (IMAGE_TOP):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  When using {} in xargs, we also need -i. 
+
+	* image.postinst (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  Typo fix: Igore -> Ignore 
+	  (really_move_image):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  Added.This routine actually moves the kernel
+		  image 
+		  From: $realimageloc/$kimage-$version(/boot/vmlinuz-2.6.12)
+                  To: $image_dest/$kimage-$version   (/vmlinuz-2.6.12)
+		  Note that the image is moved to a versioned
+		  destination, but ordinary  symlinks we create
+		  otherwise are not normally versioned 
+	  (really_reverse_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16  
+		  Normally called after really_move_image; and only called
+		  if we asked for reversed link this routine reverses the
+		  symbolic link that is notmally created. Since the real
+		  kernel image has been moved over to
+		  $image_dest/$kimage-$version. So, this routine links
+		   From:   $image_dest/$kimage-$version   (/vmlinuz-2.6.12)
+		   To:     $realimageloc/$kimage-$version (/boot/vmlinuz-2.6.12)
+	   (move_p):
+		   srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16  
+		   This routine is invoked if there is a symbolic link in
+		   place in $image_dest/$kimage -- so a symlink exists in
+		   the destination. What we are trying to determine is if
+		   we need to move the symbolic link over to the the .old
+		   location 
+	   (really_move_link):
+		   srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16  
+	           This routine moves the symbolic link around (/vmlinuz ->
+                  /vmlinuz.old) It pays attention to whether we should the
+                  fact whether we should be using hard links or not.
+	  (handle_missing_link):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  This routine handles a request to do symlinks,but there
+		  is no symlink file already there.  Either we are
+		  supposed to use copy, or we are installing on a pristine
+		  system, or the user does not want symbolic links at all.
+		  We use a configuration file to tell the last two cases
+		  apart, creating a config file if needed. 
+	  (handle_non_symlinks):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  This routine handles the rest of the cases, where the
+		  user has requested non-traditional handling, like using
+		  cp, or reverse symlinks, or hard links.
+	  (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-16
+		  Refactored several subroutines out of this one, and made
+		  the variable names saner. 
+
+2005-06-21  Manoj Srivastava  <srivasta@debian.org>
+
+	* image.postinst (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-15
+		  Added a whole slew of debugging statements to help
+		  diagnose issues people have, along with a new variable,
+		  DEBUG, normally set to 0. Also, fixed an informational
+		  message to have way more information than it used to
+		  provide. 
+
+2005-06-13  Manoj Srivastava  <srivasta@debian.org>
+
+	* image.prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Use $ramdisk instead of mkinitrd. Set the default value
+		  of $ramdisk to be mkinitrd. 
+
+	* image.preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Use $ramdisk instead of mkinitrd. Set the default value
+		  of $ramdisk to be mkinitrd. 
+
+	* image.postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Use $ramdisk instead of mkinitrd. Set the default value
+		  of $ramdisk to be mkinitrd. 
+
+	* image.postinst (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Add missing close curly brace (added an else clause as
+		  well). 
+	  (image_magic):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Use $ramdisk instead of mkinitrd. Set the default value
+		  of $ramdisk to be mkinitrd. 
+
+	* rules:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Set architecture to be the value of DEB_HOST_ARCH_CPU,
+		  if defined (older dpkg versions do not provide that
+		  value). Also, set up so that we capture that value if
+		  dpkg provides it, but do not error out if we have an
+		  older dpkg version.
+		  
+		 powerpc64 does not need to be crosscompiled.
+
+		  powerpc64 does not need -apowerpc64 passed in into
+		  dpkg-architecture.  
+
+2005-06-12  Manoj Srivastava  <srivasta@debian.org>
+
+	* rules:
+	         srivasta@debian.org--etch/kernel-package--devel--9.0--patch-9
+	         Make sure modules exist for UML images before trying to
+	         install them.
+
+	* image.prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Export KERNEL_ARCH
+
+	* image.preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Export KERNEL_ARCH  
+
+	* image.postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Export KERNEL_ARCH 
+
+	* image.postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-8
+		  Export KERNEL_ARCH 
+
+2005-06-08  Manoj Srivastava  <srivasta@debian.org>
+
+	* README (so):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-5
+		  Remove cramfs patch warning in a couple of places (we
+		  used to tell people to be sure to apply the cramfs patch
+		  or tell mkinitrd not to use cramfs, and this is not
+		  longer required for modern kernels)
+
+	* rules
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-1
+		  Make sure that the kernel-arch variables in maintainer
+			  scripts are initialized correctly. 
+	
+	* image.postrm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-1
+		  Add kernel_arch variable  
+		  Use Cwd from Perl-base for abs_path
+		  (image_magic):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-3
+			  Use abs_path to get to the real target,
+			  and test for existence.
+
+	* image.preinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-1
+		  Add kernel_arch variable 
+
+	* image.postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-1 
+	          Add kernel_arch variable
+		  Use Cwd from Perl-base for abs_path
+		  (fix_build_link):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-3
+				  Use abs_path to get to the real target,
+				  and test for  existence.
+		  (fix_source_link):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-3
+			  Use abs_path to get to the real
+			  target, and test for  existence.
+		  (image_magic):
+			  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-3
+			  Use abs_path to get to the real target, and test for  existence.
+
+	* image.prerm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-1 
+	          Add kernel_arch variable
+
+	* rules (DOC_MAN):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--base-0
+		  specify location of the manual pages produced by the
+		  kernel-doc packages.
+	* rules (real_stamp_doc):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--base-0
+		  Create the man page directory. Clean up the Docbook area
+			  in /usr/share/doc. Remember to gunzip the HTML docs.

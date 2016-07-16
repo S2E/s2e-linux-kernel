@@ -1,0 +1,178 @@
+#!/usr/bin/perl
+#                              -*- Mode: Cperl -*- 
+# debian.postinst ---
+# Author           : Manoj Srivastava ( srivasta@pilgrim.umass.edu )
+# Created On       : Sat Apr 27 05:42:43 1996
+# Created On Node  : melkor.pilgrim.umass.edu
+# Last Modified By : Manoj Srivastava
+# Last Modified On : Mon Apr 13 14:21:32 2009
+# Last Machine Used: anzu.internal.golden-gryphon.com
+# Update Count     : 46
+# Status           : Unknown, Use with caution!
+# HISTORY          :
+# Description      :
+#
+#
+#
+#  arch-tag: 1c716174-2f0a-476d-a626-a1322e62503a
+#
+
+
+$|=1;
+
+# Predefined values:
+my $version            = "=V";
+my $move_image         = '';     # target machine defined
+my $kimage             = "=K";   # Should be empty, mostly
+my $image_dir          = "=D";        # where the image is located
+my $clobber_modules    = '';          # target machine defined
+my $postinst_hook      = '';          #Normally we do not
+my $postrm_hook        = '';          #Normally we do not
+my $preinst_hook       = '';          #Normally we do not
+my $prerm_hook         = '';          #Normally we do not
+my $ignore_depmod_err  = '';          # normally we do not
+my $relink_src_link    = 'YES'; # There is no harm in checking the link
+my $relink_build_link  = 'YES'; # There is no harm in checking the link
+my $force_build_link   = '';    # There is no harm in checking the link
+my $arch               = "=A"; #  should be same as dpkg --print-installation-architecture
+my $kernel_arch        = "=B";
+my $package_name       = "=ST-headers-$version";
+my $kernel_pkg_version = "=KPV";
+
+
+die "Pre inst Internal error. Aborting." unless $version;
+
+exit 0 if $ARGV[0] =~ /abort-upgrade/;
+exit 1 unless $ARGV[0] =~ /(install|upgrade)/;
+
+#known variables
+my $image_dest      = "/";
+my $realimageloc    = "/$image_dir/";
+my $have_conffile   = "";
+my $silent_modules  = '';
+my $modules_base    = '/lib/modules';
+my $CONF_LOC        = '/etc/kernel-img.conf';
+# remove multiple leading slashes; make sure there is at least one.
+$realimageloc  =~ s|^/*|/|o;
+$realimageloc  =~ s|/+|/|o;
+
+my $architecture;
+chomp($architecture = `dpkg --print-installation-architecture`);
+$architecture = "ppc" if $architecture eq "powerpc";
+$architecture = "parisc" if $architecture eq "hppa";
+$architecture = "mips" if $architecture eq "mipsel";
+$architecture = "x86_64" if $architecture eq "amd64";
+
+my $stop_and_read     = 0;
+my $header_preinst_hook = '';
+my $header_postinst_hook = '';
+my $header_prerm_hook = '';
+my $header_postrm_hook = '';
+
+if (-r "$CONF_LOC" && -f "$CONF_LOC"  ) {
+  if (open(CONF, "$CONF_LOC")) {
+    while (<CONF>) {
+      chomp;
+      s/\#.*$//g;
+      next if /^\s*$/;
+
+      $header_preinst_hook  = "$1"  if m/^\s*header_preinst_hook\s*=\s*(\S+)/i;
+      $header_postinst_hook = "$1"  if m/^\s*header_postinst_hook\s*=\s*(\S+)/i;
+      $header_prerm_hook    = "$1"  if m/^\s*header_prerm_hook\s*=\s*(\S+)/i;
+      $header_postinst_hook = "$1"  if m/^\s*header_postinst_hook\s*=\s*(\S+)/i;
+
+    }
+    close CONF;
+    $have_conffile = "Yes";
+  }
+}
+
+sub exec_script {
+  my $type   = shift;
+  my $script = shift;
+  print STDERR "Running $type hook script $script.\n";
+  system ("$script $version $realimageloc$kimage-$version") &&
+    print STDERR "User $type hook script [$script] ";
+  if ($?) {
+    if ($? == -1) {
+      print STDERR "failed to execute: $!\n";
+    }
+    elsif ($? & 127) {
+      printf STDERR "died with signal %d, %s coredump\n",
+        ($? & 127),  ($? & 128) ? 'with' : 'without';
+    }
+    else {
+      printf STDERR "exited with value %d\n", $? >> 8;
+    }
+    exit $? >> 8;
+  }
+}
+sub run_hook {
+  my $type   = shift;
+  my $script = shift;
+  if ($script =~ m,^/,) {
+    # Full path provided for the hook script
+    if (-x "$script") {
+      &exec_script($type,$script);
+    }
+    else {
+      die "The provided $type hook script [$script] could not be run.\n";
+    }
+  }
+  else {
+    # Look for it in a safe path
+    for my $path ('/bin', '/sbin', '/usr/bin', '/usr/sbin') {
+      if (-x "$path/$script") {
+        &exec_script($type, "$path/$script");
+        return 0;
+      }
+    }
+    # No luck
+    print STDERR "Could not find $type hook script [$script].\n";
+    die "Looked in: '/bin', '/sbin', '/usr/bin', '/usr/sbin'\n";
+  }
+}
+
+# Set up the env variable containing our arguments
+my $out;
+for (@ARGV) {
+  s,','\\'',g;
+  $out.=" '$_'";
+}
+$ENV{'DEB_MAINT_PARAMS'}="$out";
+$ENV{'KERNEL_PACKAGE_VERSION'}="$kernel_pkg_version";
+
+## Run user hook script here, if any
+if (-d "/etc/kernel/header_preinst.d") {
+  print STDERR "Examining /etc/kernel/header_preinst.d.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/header_preinst.d") &&
+            die "Failed to process /etc/kernel/header_preinst.d";
+}
+
+if (-d "/etc/kernel/header_preinst.d/$version") {
+  print STDERR "Examining /etc/kernel/header_preinst.d/$version.\n";
+  system ("run-parts --verbose --exit-on-error --arg=$version " .
+          "--arg=$realimageloc$kimage-$version " .
+          "/etc/kernel/header_preinst.d/$version") &&
+            die "Failed to process /etc/kernel/header_preinst.d/$version";
+}
+
+if (-x "$header_preinst_hook") {
+  system ("$header_preinst_hook", $package, $version) &&
+    warn "User hook script $header_preinst_hook failed";
+  #&run_hook("preinst", $header_preinst_hook);
+}
+
+exit 0;
+
+__END__
+
+
+
+
+
+
+
+

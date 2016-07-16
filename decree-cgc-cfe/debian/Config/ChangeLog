@@ -1,0 +1,206 @@
+2007-02-25  Manoj Srivastava  <srivasta@debian.org>
+
+	* config.armel (CONFIG_ARM): New kernel config file for the armel arch.
+
+2005-11-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* config.alpha:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.amiga:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.apus:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.arm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.atari:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.bvme6000:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.mac:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.mvme147:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.mvme16x:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.s390:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.sparc:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.sparc64:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  Updated. 
+
+	* config.sun3:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.sparc64-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.s3c2410:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.s390x:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.s390-tape:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.rpc:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.q40:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.powerpc64:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.powerpc-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.powerpc-miboot:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.powerpc:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.mckinley-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.mckinley:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.m68k:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.k7-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.k7:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.ixp4xx:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.itanium-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.itanium:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.ia64:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.hppa:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.hp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.footbridge:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.em64t-p4-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.em64t-p4:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.amd64-k8-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.amd64-k8:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.amd64-generic:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.amd64:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.alpha-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.alpha-generic:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.686-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.686:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.64-sm:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.64:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.386:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.32-smp:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file
+
+	* config.32:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-59
+		  New file. 
+

@@ -1,0 +1,23 @@
+#! /bin/bash
+
+version=$1
+
+if [ -n "$DEB_MAINT_PARAMS" ]; then
+    eval set -- "$DEB_MAINT_PARAMS"
+    if [ -z "$1" ] || [ "$1" != "remove" ]; then
+        exit 0;
+    fi
+fi
+# passing the kernel version is required
+[ -z "$version" ] && exit 1
+
+HEADERDIR=/usr/src/linux-headers-$version
+
+test -d $HEADERDIR || exit 0
+
+# Make sure the asm link is gone
+if [ -L $HEADERDIR/include/asm ]; then
+    rm $HEADERDIR/include/asm 
+fi
+
+exit 0

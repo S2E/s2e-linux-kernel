@@ -1,0 +1,108 @@
+#! /usr/bin/make -f
+############################ -*- Mode: Makefile -*- ###########################
+## debian.rules ---
+## Author	    : Manoj Srivastava ( srivasta@pilgrim.umass.edu )
+## Created On	    : Sat Apr 27 06:36:31 1996
+## Created On Node  : melkor.pilgrim.umass.edu
+## Last Modified By : Manoj Srivastava
+## Last Modified On : Thu Oct  9 14:17:29 2008
+## Last Machine Used: anzu.internal.golden-gryphon.com
+## Update Count	    : 974
+## Status	    : Unknown, Use with caution!
+## HISTORY	    :
+## Description	    :
+## arch-tag: aa70d4e5-79bf-405c-95ec-5fa9f7ae7b69
+## 
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+###############################################################################
+
+# The version of kernel-package this belongs to
+kpkg_version := 12.036+nmu3
+
+CROSS_COMPILE   ?=
+ifneq ($(CROSS_COMPILE),-)
+OBJCOPY         = $(CROSS_COMPILE)objcopy
+OBJDUMP         = $(CROSS_COMPILE)objdump
+else
+OBJCOPY         = objcopy
+OBJDUMP         = objdump
+endif
+export OBJCOPY OBJDUMP CROSS_COMPILE
+
+# Where the package libs are stored
+LIBLOC     :=/usr/share/kernel-package
+
+define which_debdir
+DEBDIR=$(shell if test -f ./debian/ruleset/kernel_version.mk; then echo ./debian;     \
+                                                              else echo $(LIBLOC); fi)
+endef
+
+define deb_rule
+$(eval $(which_debdir))
+  run_command=$(MAKE) -f $(DEBDIR)/rules
+  ifeq ($(strip $(int_am_root)),)
+    root_run_command=$(ROOT_CMD) $(MAKE) -f $(DEBDIR)/rules
+  else
+    root_run_command=$(MAKE) -f $(DEBDIR)/rules
+  endif
+endef
+
+# determine  the architecture for package building
+$(eval $(which_debdir))
+include $(DEBDIR)/ruleset/common/archvars.mk
+# Set variables with information extracted from control and changelog files
+include $(DEBDIR)/ruleset/common/pkgvars.mk
+# Install commands
+include $(DEBDIR)/ruleset/common/install_cmds.mk
+# we use debconf
+include $(DEBDIR)/ruleset/common/debconf.mk
+# Do the local variable setting here (includes kernel-pkg.conf config files)
+include $(DEBDIR)/ruleset/local-vars.mk
+
+# export variables
+export root_cmd FLAVOUR INT_SUBARCH APPEND_TO_VERSION UNSIGN_CHANGELOG  \
+       UNSIGN_SOURCE ROOT_CMD MODULE_LOC EXTRAVERSION ALL_PATCH_DIR     \
+       ALL_PATCH_APPLY ALL_PATCH_UNPATCH DIR_PATCH_UNPATCH              \
+       DIR_PATCH_APPLY VERSIONED_PATCH_DIR VERSIONED_ALL_PATCH_UNPATCH  \
+       VERSIONED_ALL_PATCH_APPLY VERSIONED_DIR_PATCH_UNPATCH            \
+       VERSIONED_DIR_PATCH_APPLY KPKG_SELECTED_MODULES CONCURRENCY_LEVEL\
+       kpkg_version
+
+all:
+	$(eval $(which_debdir))
+	@echo nothing to be done.
+
+$(eval $(which_debdir))
+include $(DEBDIR)/ruleset/common/targets.mk
+include $(DEBDIR)/ruleset/local.mk
+
+test:
+	$(eval $(which_debdir))
+	echo version: $(version)
+	echo KERNELRELEASE: $(KERNELRELEASE)
+	echo KPKG_ARCH: $(KPKG_ARCH)
+	echo $(DEB_BUILD_ARCH)
+	echo $(DEB_BUILD_GNU_CPU)
+	echo $(DEB_BUILD_GNU_TYPE)
+	echo $(DEB_HOST_ARCH)
+	echo $(DEB_HOST_GNU_CPU)
+	echo $(DEB_HOST_GNU_SYSTEM)
+	echo $(DEB_HOST_GNU_TYPE)
+	echo $(DEB_BUILD_GNU_SYSTEM)
+
+#Local variables:
+#mode: makefile
+#End:

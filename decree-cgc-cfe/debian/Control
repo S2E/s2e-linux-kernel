@@ -1,0 +1,126 @@
+Source: =ST-source-=V
+Section: devel
+Priority: optional
+Maintainer:  =M
+Build-Depends: po-debconf, gettext, file
+Standards-Version: 3.5.9.0
+
+Package: =ST-headers-=V
+Architecture: any
+Depends: ${shlibs:Depends}
+Section: devel
+Priority: optional
+Recommends: libc6-dev | libc-dev, gcc | c-compiler, make (>= 3.80-10), binutils (>= 2.12), util-linux (>= 2.10o)
+Suggests: module-init-tools (>= 0.9.10), e2fsprogs (>= 1.29)
+Provides: =ST-headers, =ST-headers-=CV
+Description: Header files related to Linux kernel, specifically,
+ version =V
+ .
+ This package provides kernel header files for sites 
+ that want the latest kernel headers for version 
+ =V.
+ Please read 
+ /usr/share/doc/=ST-headers-=V/debian.README.gz
+ for details
+
+Package: =ST-source-=V
+Architecture: all
+Section: devel
+Priority: optional
+Provides: =ST-source, =ST-source-=CV
+Depends: binutils, bzip2, file
+Recommends: libc6-dev | libc-dev, gcc | c-compiler, make (>= 3.80-10), po-debconf, gettext, binutils (>= 2.12), util-linux (>= 2.10o), module-init-tools (>= 0.9.10), debianutils (>= 2.30)
+Suggests: libncurses-dev | ncurses-dev, kernel-package, xmlto, libdb3-dev, libncurses-dev, docbook-utils, e2fsprogs (>= 1.29), linux-initramfs-tool
+Description: Linux kernel source for version =V
+ This package provides the source code for the Linux kernel, specifically,
+ version =V.
+ .
+ You may configure the kernel to your setup by typing "make config"
+ and following instructions, but you could get ncursesX.X-dev and try
+ "make menuconfig" for a jazzier, and easier to use interface. There 
+ are options to use QT or GNOME based configuration interfaces, but they
+ need additional packages to be installed. Also, please read the detailed 
+ documentation in the file README.headers.gz in the documentation directory
+ /usr/share/doc/=ST-source-=V/.
+ .
+ If you wish to use this package to create a custom Linux kernel, then
+ it is suggested that you investigate the package kernel-package,
+ which has been designed to ease the task of creating kernel image
+ packages. 
+
+Package: =ST-image-=V=SA
+Architecture: =A
+Section: kernel
+Priority: optional
+Provides: =ST-image,  =ST-image-=CV
+Pre-Depends: debconf (>= 0.2.17) | debconf-2.0
+Depends: =I coreutils (>= 5.96)
+Suggests: fdutils, =ST-doc-=V=SA | =ST-source-=V, ksymoops, =ST-image-=V=SA-dbg
+Description: Linux kernel binary image for version =V=SA
+ This package contains the Linux kernel image for version 
+ =V=SA.
+ .
+ It also contains the corresponding System.map file, and the modules
+ built by the packager.  It also contains scripts that try to ensure
+ that the system is not left in a unbootable state after an update.
+ .
+ Kernel image packages are generally produced using kernel-package,
+ and it is suggested that you install that package if you wish to
+ create a custom kernel from the sources. Please look at kernel-img.conf(5),
+ and /usr/share/doc/kernel-package/README.gz  from the package kernel-package
+ for details on how to tailor the  installation of this or any other kernel 
+ image package
+
+Package: =ST-image-=V=SA-dbg
+Architecture: =A 
+Section: debug
+Priority: optional 
+Depends: =ST-image-=V=SA
+Provides: =ST-debug,  =ST-debug-=CV, =ST-debug-=V=SA
+Suggests: systemtap
+Description: Linux kernel debug image for version =V=SA 
+ This package contains the Linux kernel debug image for version
+  =V=SA.
+ This means the debugging information for the modules in the kernel
+ image package, and the uncompressed vmlinux image; it is not intended
+ to be bootable. This is useful for debugging the Linux kernel. 
+
+
+Package: =ST-doc-=V
+Architecture: all
+Section: doc
+Priority: optional
+Provides: =ST-doc-=CV
+Suggests: =ST-image-=V=SA
+Description: Linux kernel specific documentation for version =V
+ This package provides various Readme's in the =V
+ kernel Documentation/ subdirectory: these typically contain
+ kernel-specific installation notes for some drivers. for
+ example. Please see
+ /usr/share/doc/=ST-doc-X.X.XX/Documentation/00-INDEX
+ for a list of contents.  Please also read the Changes file, as it
+ contains information about the problems which may result by upgrading
+ your kernel.
+
+Package: =ST-manual-=V
+Architecture: all
+Section: doc
+Priority: optional
+Provides: =ST-manual-=CV
+Conflicts: =ST-manual-=CV
+Suggests: =ST-image-=V=SA
+Description: Linux kernel section 9 manual pages for version =V
+ This package provides various Section 9 manual pages included with the kernel. 
+
+Package: =ST-uml-=V=SA
+Architecture: =A
+Section: utils
+Priority: optional
+Provides: =ST-uml,  =ST-uml-=CV, user-mode-linux
+Depends: =I coreutils (>= 5.96) | fileutils (>= 4.0)
+Suggests: fdutils, kernel-doc-=V=SA | kernel-source-=V, uml-utilities
+Conflicts: user-mode-linux (<= 2.6)
+Replaces: user-mode-linux (<= 2.6)
+Description: Linux uml kernel binary image for version =V=SA
+ This package contains the Linux uml kernel image for version =V=SA
+ and the modules built by the packager.  

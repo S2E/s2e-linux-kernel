@@ -1,0 +1,13 @@
+
+    $Id: README.image,v 1.4 2002/05/03 21:17:06 srivasta Exp $
+
+ This is the Debian GNU/Linux prepackaged version of the Linux kernel
+ binary image and modules. Linux was written by Linus Torvalds
+ <torvalds@osdl.org> and others.
+
+ The kernel sources may be retrieved from ftp.us.kernel.org:/pub/linux/kernel/
+
+ This package contains the Linux kernel image, the System.map file,
+ and the modules built by the packager.  It also contains scripts that
+ try to ensure that the system is not left in a unbootable state
+ after an update.

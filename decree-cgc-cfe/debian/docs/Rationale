@@ -1,0 +1,86 @@
+		    Advantages of using make-kpkg
+	            ---------- -- ----- ---------
+
+	I have been asked several times about the advantages of using
+ the kernel-package package over the traditional Linux way of hand
+ compiling kernels, and I have come up with this list. This is off the
+ top of my head, I'm sure to have missed points yet. Any additions
+ welcomed.
+
+     i) Convenience. I used to compile kernels manually, and it
+        involved a series of steps to be taken in order;
+        kernel-package was written to take all the required steps (it
+        has grown beyond that now, but essentially, that is what it
+        does). This is especially important to novices: make-kpkg
+        takes all the steps required to compile a kernel, and
+        installation of kernels is a snap.
+    ii) It allows you to keep multiple version of kernel images on
+        your machine with no fuss.
+   iii) It has a facility for you to keep multiple flavours of the
+        same kernel version on your machine (you could have a stable
+        2.0.33 version, and a 2.0.33 version patched with the latest
+        drivers, and not worry about contaminating the modules in
+        /lib/modules).
+    iv) It knows that some architectures do not have vmlinuz (using
+        vmlinux instead), and others use zImage rather than bzImage,
+        and calls the appropriate target, and takes care of moving the
+        correct file into place.
+     v) Several other kernel module packages are hooked into
+        kernel-package, so one can seamlessly compile, say, pcmcia
+        modules at the same time as one compiles a kernel, and be
+        assured that the modules so compiled are compatible.
+    vi) It enables you to use the package management system to keep
+        track of the kernels created. Using make-kpkg creates a .deb
+        file, and dpkg can track it for you. This facilitates the task
+        of other packages that depend on the kernel packages.
+   vii) It keeps track of the configuration file for each kernel image
+        in /boot, which is part of the image package, and hence the
+        kernel image and the configuration file are always together.
+  viii) It allows you to specify a directory with config files, with
+        separate config files for each subarchitecture (even allows
+        for different config files for i386, i486, etc). It is really
+        neat for people who need to compile kernels for a variety of
+        sub architectures.
+    ix) It allows to create a package with the headers, or the
+        sources, also as a deb file, and enables the package
+        management system to keep track of those (and there are
+        packages that depend on the package management system being
+        aware of these packages).
+     x) Since the kernel image package is a full fledged Debian
+        package, it comes with maintainer scripts, which allow the end
+        user to add in scripts to affect handling of new kernel
+        packages in a most flexible fashion.
+    xi) There is support for the multitudinous subarchitectures that
+        have blossomed under the umbrella of the m68k and powerpc
+        architectures.
+   xii) There is support there for optionally applying patches to the
+        kernel provided as a kernel-patch .deb file, and building a
+        patched kernel auto-magically, and still retain an UN-patched
+        kernel source tree.
+  xiii) Allows one to compile a kernel for another computer, for
+        example using a fast machine to compile the kernel for
+	installation on a slower machine. This is really nice since
+	the modules are all included in the .deb; and one does not
+	have to deal with modules manually.
+   xiv) The postinst and the postrm scripts allow the local admin on
+        the installation machine to add a script into runtime hooks;
+        this can allow, amongst other things, grub users to add and
+        remove kernel image stanzas from the grub menu (example
+        scripts to do this are in the package).
+    xv) One can append to the kernel version on the command line, or
+        by setting an environment variable. So if your kernel is
+        called kernel-image-2.4.1John.Home; it is unlikely to be
+        overridden by the official 2.4.1 kernel, since they are not the
+        same version.
+
+		   Disadvantages of using make-kpkg
+		   ------------- -- ----- ---------
+
+      i) This is a cookie cutter approach to compiling kernels, and
+         there are people who like being close to the bare metal.
+     ii) This is not how it is done in the non-Debian world. This
+         flouts tradition. (It has been pointed out, though, that this
+         is fast becoming Debian tradition)
+    iii) It forces you to use fakeroot or sudo or super or be root to
+         create a kernel image .deb file (this is not as bad as it
+         used to be before fakeroot).

@@ -1,0 +1,36 @@
+2006-08-05  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst (run_hook):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Added a new function to allow running of hook scripts
+		  with the proper sanity checks and diagnostics.  
+	  (exec_script):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-170
+		  Support function for run_hook. 
+
+2006-07-19  Manoj Srivastava  <srivasta@debian.org>
+
+	* README:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-166
+			  Update Linus' email address  
+
+2005-11-07  Manoj Srivastava  <srivasta@debian.org>
+
+	* postinst:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-62
+		  Added a whole slew of variables to bringthis into sync
+		  with the kernel image maintainer scripts. This
+		  involveschanging $package -> $package_name. Finally, if
+		  the corresponding kernel image has been installed, and
+		  does not have a build symlink; we create a build symlink
+		  pointing to our package. 
+
+	* create_link:
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-62
+		  Only install the link if the /lib/modules/$version
+		  directory exists (fixes and error on symlink). 
+
+	* copyright (ftp):
+		  srivasta@debian.org--etch/kernel-package--devel--9.0--patch-61
+		  Fixed FSF address 
+

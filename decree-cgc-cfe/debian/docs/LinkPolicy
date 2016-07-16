@@ -1,0 +1,203 @@
+
+   $Id: LinkPolicy,v 1.4 1998/01/30 01:26:31 srivasta Exp $
+
+This is an proposal for packages providing kernel sources, headers,
+and image, which attempts to make it possible to have multiple
+versions of the kernel headers/source/image on the system
+concurrently.
+
+It would be nice if removing a current source/header could roll back
+to any older versions still on the system, but that seems hard, though
+I think I see a way to do this. (Read on for details).
+
+The source unpack into /usr/src/linux-X.X.XX, and kernel headers only
+package unpacks into /usr/src/headers-X.X.XX (so that the
+kernel-source and kernel-header package do not need to conflict at
+all). /usr/src/linux is a symlink that is maintained current by the
+Debian package scripts, pointing to the most recently installed source
+or header. We try to ensure that it will always point somewhere sane.
+
+We accommodate multiple versions by having each package include the
+kernel version in the name, and provide a corresponding virtual
+package.  For example, assuming that a user has kernel versions 1.3.64
+and 1.3.95 on her system, we get:
+
+Package Name           Package version         provides
+======================================================================
+kernel-source-1.3.95    1.3.95-1          kernel-headers, kernel-source
+kernel-headers-1.3.95   1.3.95-1          kernel-headers
+kernel-image-1.3.95     1.3.95-1          kernel-image
+			
+kernel-source-1.3.64    1.3.64-3          kernel-headers, kernel-source
+kernel-headers-1.3.64   1.3.64-3          kernel-headers
+kernel-image-1.3.64     1.3.64-3          kernel-image
+======================================================================
+
+The following analysis shows we should have a postinst and postrm for
+both headers and source. The image has a postinst, to ask if the user
+wants to run LILO. 
+
+======================================================================
+Case A:
+  upgrade source/header X to source/header Y
+  script            action      version on disk
+  X prerm                           X
+  Y preinst                         X
+	             unpack         X
+  X postrm upgrade                  X           no change
+                     remove         X
+  Y postinst                        X           (no harm, if re-links) (a)
+----------------------------------------------------------------------
+Case B:
+  Install source/header Y along with  header/source X
+  Y preinst                         X
+             unpack                 X,Y
+  Y postinst                        X,Y          <---- change link      (b) 
+----------------------------------------------------------------------  
+Case C:
+    remove current source/header X no other source/header exists
+  X prerm                           X
+                     remove         X'
+  X postrm   remove                 X'            <---- remove link        (c)
+  X postrm   purge                  X'            no harm in removing link (d)
+----------------------------------------------------------------------
+Case D:
+    remove current source/header X (some version exists)
+  X prerm                           X,Y
+                     remove        X',Y
+  X postrm   remove                X',Y           <---- relink to Y        (f)
+  X postrm   purge                 X',Y           <- ignore, or relink to Y(g)
+----------------------------------------------------------------------
+Case E:
+    remove non-current source/header X 
+  X prerm                           X,Y
+                     remove        X',Y
+  X postrm   remove                X',Y           ignore link != X         (h)
+  X postrm   purge                 X',Y           <- ignore                (i)
+======================================================================
+
+X' is the case when X should be gone, but isn't really since directory
+isn't empty (compiling kernels leaves .depends and other files all
+over the place, so the directory isn't empty when dpkg removes all the
+files listed for that directory).
+
+The problem in handling cases c/d and e/f is that if no other source
+or header packages are available, then /usr/src/linux should be
+removed, or else it should be rolled back to a previously installed
+version.  The hard part is to distinguish between the two cases, and
+to discover which is a valid directory to link to. Just searching in
+/usr/src is not good enough, because of the possible dreck left by
+unclean source directories.
+
+Maybe I should maintain a list of current valid directory names,
+updated by postinst like so:
+  (echo headers-X.X.XX >> .versionlist)
+and removed in postrm like so:
+  (cp .versionlist .save$$; grep -v headers-X.X.XX .save$$ > .versionlist)
+where .version list is a conffile. last -1 .versionlist will give the
+next candidate.
+
+
+======================================================================
+postrm called with argument:
+abort-upgrade               -- ignore, no preinst to unwind from
+abort-install               -- ignore, no preinst to unwind from   
+abort-install               -- ignore, no preinst to unwind from
+upgrade <newversion>        -- ignore, same directory
+failed-upgrade <oldversion> -- ignore, we didn't change anything in upgrade
+disappear                   -- ignore, we are safe, no conflict
+remove                      -- ignore unless builtin version is the same as
+                               link target, or do last .versionlist; relink
+                               to version found or remove link if none
+purge                       -- ignore, proper action taken in remove
+
+postinst called with argument:
+abort-upgrade     	     -- ignore, no prerm to unwind from
+failed-upgrade    	     -- ignore, since we ignore abort-upgrade
+abort-deconfigure 	     -- ignore, no prerm to unwind from
+abort-remove      	     -- ignore, no prerm to unwind from
+abort-upgrade new-version    -- ignore, we didn't change anything in upgrade
+configure                    -- link to builtin version
+======================================================================
+
+
+	The following is an message on posted on the debian mailing
+ lists that provides a rationale for the link policy defined in this
+ document. 
+
+______________________________________________________________________
+
+
+
+>>"Noel" == Noel Maddy <ncm@biostat.hfh.edu> writes:
+
+Noel> It still leaves me with one question, though.  If the kernel
+Noel> headers that Debian is supplying for libc6 compilation are
+Noel> needed only for libc6 compilation, why are they kept in /usr/src
+Noel> with a symlink rather than putting them directly in
+Noel> /usr/include/linux?
+
+
+	Well, this kinda belongs to the can of worms we fondly
+ remember as "Debian's /usr/src policy" ;-). Lets see if I can address
+ this. Firstly, kernel headers are not merely for libc6
+ compilation. In fact, /usr/src/linux is not referenced at all by
+ normal compilation processes: those depend, in particular, on the
+ symbolic link /usr/src/linux-2.0.32, which is provided by either
+ kernel-headers-2.0.32 or by kernel-source-2.0.32.
+
+
+ /usr/src/linux           is meant to be a link to the chronologically
+                          latest installed set of kernel headers
+ /usr/src/linux-X.X.XX    is meant to be a link to a specific version
+                          of kernel include files.
+
+Noel> I would think that having kernel-headers put them directly into
+Noel> /usr/include/linux would make more sense.  That probably means
+Noel> that I'm not understanding some of the issues...
+
+	Then that means you could not have more than one kernel
+ headers or source packages installed. I have, at the moment, 2
+ header packages and 4 source packages on my machine. If they all
+ tried to go into /usr/src/linux; that would be chaos. Espescially if
+ /usr/src/linux were merely overlaid with the most recent install
+ (imagine installing 2.0.34 over 2.1.82 -- what a mess)
+
+	It is easy to manipulate the symbolic link in the
+ postrm/postinst phases of package management.
+
+	Why ahve them there at all? It is for the convenience of
+ module writes, honest ;-)
+
+	If I am a developer who has lovingly crafted, say, a kernel
+ module inextricably linked to a particular kernel version (and I
+ happen to know it does not work with older kernels, and may not work
+ with newer ones), I would put -I/usr/src/linux-Y.Y.YY, for the
+ relevant Y.Y.YY version of the kernel. The user may then install the
+ whole kernel source, or just the headers, and my module shall
+ compile. 
+
+	If, on the other hand, I am creating a module that say,
+ reports details on kernel internals, based on a set of definitions
+ based in a kernel header file, which may change from kernel to kernel
+ but has a fixed API, I can get a version tailored to the latest
+ kernel version by just specifying: -I/usr/src/linux, and be satisfied
+ that I can load a kernel header or source package, and recompile my
+ code, and it shall pick up the latest set of headers.
+
+	In either case I may have to put code into the module to test
+ the running kernel if required ;-)
+
+	That is the rationale behind the set of symlinks
+ /usr/src/linux* on a Debian system (remember, actual headers and
+ sources reside in /usr/src/kernel-{header,source}-Y.Y.YY).
+
+	I hope this clarifies things a trifle.
+
+	manoj
+Manoj Srivastava  <srivasta@acm.org> <http://www.datasync.com/%7Esrivasta/>
+Key C7261095 fingerprint = CB D9 F4 12 68 07 E4 05  CC 2D 27 12 1D F5 E8 6E
+
+
+
+
