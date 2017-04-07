@@ -77,7 +77,7 @@
         ],
         "scripts": [
             "scripts/setup.sh",
-            "scripts/cgc-setup.sh",
+            "scripts/decree-setup.sh",
             "scripts/install-kernel.sh"
         ]
     }],
