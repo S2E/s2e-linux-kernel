@@ -50,7 +50,6 @@ poll-generator_10551-cfe-rc8_all.deb
 cb-testing_10551-cfe-rc8_all.deb
 cgc-release-documentation_10560-cfe-rc8_all.deb
 cgcef-verify_10551-cfe-rc8_all.deb
-cgc-sample-challenges_10565-cfe-rc8_i386.deb
 cgc-pov-xml2c_10551-cfe-rc8_i386.deb
 strace-cgc_4.5.20-10551-cfe-rc8_i386.deb
 libpov_10551-cfe-rc8_i386.deb
