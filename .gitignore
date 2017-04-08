@@ -5,3 +5,7 @@ packer_cache/
 *.box
 
 output-*/
+tmp-output
+output
+*.deb
+*.swp

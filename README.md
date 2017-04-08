@@ -1,24 +1,16 @@
 # S2E Linux Source
 
-This repo contains modified versions of the Linux kernel that are suitable for
-use with the [S2E](http://s2e.systems) software analysis platform. Different
-kernels with various modifications are available.
-
-## Prerequisites
-
-Building a QEMU image suitable for S2E requires the [Packer](https://packer.io)
-tool.
-
-## Building an image
-
-To build a QEMU image using an existing kernel from this repo, simply run
-`packer build -var 's2e_install=/path/to/s2e/install/dir' $KERNEL.json`, where
-`$KERNEL` is one of the kernels availale in this repository.
-
-Some options are configurable, for example setting the username and password.
-Run `packer inspect $KERNEL.json` to view configurable options.
+This repository contains modified versions of the Linux kernel enhanced for
+use with the [S2E](http://s2e.systems) software analysis platform. The kernel extensions
+mainly include tracking process and thread creation/termination as well as signal monitoring
+(segfaults, etc.). The LinuxMonitor/DecreeMonitor plugins capture these events and expose
+them to other analysis plugins.
 
 ## Building the kernel
+
+This section describes how to build the kernel manually. We recommend that you
+use the appropriate docker scripts in the [guest-images](http://github.com/s2e/guest-images)
+repository.
 
 If you just want to build the kernel without building a complete S2E image
 (e.g. if you want to experiment with kernel changes without rebuilding a new
@@ -38,7 +30,6 @@ C_INCLUDE_PATH=../include:$C_INCLUDE_PATH fakeroot -- make deb-pkg LOCALVERSION=
 
 cd ..
 ```
-
 You can then transfer the generated deb files to your image and install with
 `dpkg -i`.
 
