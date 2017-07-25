@@ -52,8 +52,3 @@ with S2E:
    plugin class should extend the `BaseLinuxMonitor` class and implement the
    virtual `handleCommand` method to handle a command sent from the modified
    kernel
-
-6. Write a `$KERNEL.json` file to build and install your kernel into a QEMU
-   image. To use your image template with
-   [s2e-env](https://github.com/dslab-epfl/s2e-env.git) you must specify the
-   `manifest` post-processor
