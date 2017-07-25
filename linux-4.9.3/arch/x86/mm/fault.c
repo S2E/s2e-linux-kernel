@@ -24,9 +24,10 @@
 #include <asm/vm86.h>			/* struct vm86			*/
 #include <asm/mmu_context.h>		/* vma_pkey()			*/
 
-/* S2E support */
+#ifdef CONFIG_S2E
 #include <s2e/s2e.h>
 #include <s2e/linux/linux_monitor.h>
+#endif
 
 #define CREATE_TRACE_POINTS
 #include <asm/trace/exceptions.h>
@@ -233,7 +234,7 @@ force_sig_info_fault(int si_signo, int si_code, unsigned long address,
 	unsigned lsb = 0;
 	siginfo_t info;
 
-	/* S2E support */
+#ifdef CONFIG_S2E
 	if (s2e_linux_monitor_enabled) {
 #ifdef CONFIG_DEBUG_S2E
 		s2e_printf("SEGFAULT at 0x%lx\n", task_pt_regs(tsk)->ip);
@@ -244,6 +245,7 @@ force_sig_info_fault(int si_signo, int si_code, unsigned long address,
 			address,
 			fault);
 	}
+#endif
 
 	info.si_signo	= si_signo;
 	info.si_errno	= 0;

@@ -90,12 +90,6 @@
 #include <asm/cpufeature.h>
 #include <asm/cpufeatures.h>
 
-/* S2E support */
-#include <s2e/s2e.h>
-#include <s2e/linux/linux_monitor.h>
-
-char s2e_linux_monitor_enabled = 0;
-
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -542,10 +536,6 @@ asmlinkage __visible void __init start_kernel(void)
 	vfs_caches_init_early();
 	sort_main_extable();
 	trap_init();
-
-	/* Check if s2e engine is enabled */
-	if (boot_cpu_has(X86_FEATURE_S2E) && s2e_plugin_loaded("LinuxMonitor"))
-		s2e_linux_monitor_enabled = 1;
 
 	mm_init();
 
