@@ -45,8 +45,8 @@ with S2E:
 3. Add/remove/modify any commands (and their invoke functions) that you require
    in `include/s2e/*/*_monitor.h`
 
-4. Modify the relevant kernel code to call the invoke function and issue the
-   command to S2E
+4. Copy `kernel/s2e` and modify any relevant kernel code to issue commands to
+   S2E
 
 5. Write an S2E plugin that includes the same `*_monitor.h` file. The
    plugin class should extend the `BaseLinuxMonitor` class and implement the

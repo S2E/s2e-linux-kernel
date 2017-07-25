@@ -91,6 +91,10 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 DEFINE_MUTEX(sched_domains_mutex);
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
@@ -2898,6 +2902,15 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	/* Here we just switch the register state and the stack. */
 	switch_to(prev, next, prev);
 	barrier();
+
+#ifdef CONFIG_S2E
+	/*
+	 * Save a copy of the current task so that S2E can access it.
+	 *
+	 * NOTE: This is not multi-CPU safe!
+	 */
+	 s2e_current_task = current;
+#endif
 
 	return finish_task_switch(prev);
 }

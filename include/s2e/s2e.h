@@ -31,6 +31,14 @@
 #ifndef S2E_CUSTOM_INSTRUCTIONS_H
 #define S2E_CUSTOM_INSTRUCTIONS_H
 
+#include <stdarg.h>
+
+#ifdef __KERNEL__
+#include <linux/types.h>
+#else
+#include <inttypes.h>
+#endif
+
 #include "opcodes.h"
 
 // clang-format off
@@ -137,10 +145,13 @@ static inline void s2e_message(const char *message) {
 static int s2e_printf(const char *format, ...) {
     char buffer[512];
     va_list args;
+    int ret;
+
     va_start(args, format);
-    int ret = vsnprintf(buffer, sizeof(buffer), format, args);
+    ret = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     s2e_message(buffer);
+
     return ret;
 }
 
