@@ -24,6 +24,16 @@
 #ifndef S2E_DECREE_COMMANDS_H
 #define S2E_DECREE_COMMANDS_H
 
+#ifdef __KERNEL__
+#include <linux/types.h>
+#else
+#include <inttypes.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define S2E_DECREEMON_COMMAND_VERSION 0x201606121741ULL // date +%Y%m%d%H%M
 
 enum S2E_DECREEMON_COMMANDS {
@@ -44,6 +54,7 @@ enum S2E_DECREEMON_COMMANDS {
     DECREE_COPY_TO_USER,
     DECREE_UPDATE_MEMORY_MAP,
     DECREE_SET_CB_PARAMS,
+    DECREE_INIT,
 };
 
 struct S2E_DECREEMON_COMMAND_PROCESS_LOAD {
@@ -159,15 +170,19 @@ struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS {
 
 } __attribute__((packed));
 
-
-#define S2E_DECREEMON_VM_READ  (1u << 0)
+#define S2E_DECREEMON_VM_READ (1u << 0)
 #define S2E_DECREEMON_VM_WRITE (1u << 1)
-#define S2E_DECREEMON_VM_EXEC  (1u << 2)
+#define S2E_DECREEMON_VM_EXEC (1u << 2)
 
 struct S2E_DECREEMON_VMA {
     uint64_t start;
     uint64_t end;
     uint64_t flags;
+} __attribute__((packed));
+
+struct S2E_DECREEMON_COMMAND_INIT {
+    uint64_t page_offset;
+    uint64_t task_struct_pid_offset;
 } __attribute__((packed));
 
 struct S2E_DECREEMON_COMMAND {
@@ -188,8 +203,13 @@ struct S2E_DECREEMON_COMMAND {
         struct S2E_DECREEMON_COMMAND_COPY_TO_USER CopyToUser;
         struct S2E_DECREEMON_COMMAND_UPDATE_MEMORY_MAP UpdateMemoryMap;
         struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS CbParams;
+        struct S2E_DECREEMON_COMMAND_INIT Init;
     };
     char currentName[32]; // not NULL terminated
 } __attribute__((packed));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
