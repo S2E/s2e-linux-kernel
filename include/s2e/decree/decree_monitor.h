@@ -368,4 +368,16 @@ static inline void s2e_decree_init(uint64_t page_offset, uint64_t task_struct_pi
     }
 }
 
+static inline void s2e_decree_kernel_panic(const char *msg, unsigned msg_size)
+{
+    struct S2E_DECREEMON_COMMAND cmd = { 0 };
+    cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+    cmd.Command = DECREE_KERNEL_PANIC;
+    cmd.currentPid = -1;
+    cmd.Panic.message = (uintptr_t) msg;
+    cmd.Panic.message_size = msg_size;
+
+    s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
+}
+
 #endif

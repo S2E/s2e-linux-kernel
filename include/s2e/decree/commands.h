@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-#define S2E_DECREEMON_COMMAND_VERSION 0x201606121741ULL // date +%Y%m%d%H%M
+#define S2E_DECREEMON_COMMAND_VERSION 0x201711041408ULL // date +%Y%m%d%H%M
 
 enum S2E_DECREEMON_COMMANDS {
     DECREE_SEGFAULT,
@@ -55,6 +55,7 @@ enum S2E_DECREEMON_COMMANDS {
     DECREE_UPDATE_MEMORY_MAP,
     DECREE_SET_CB_PARAMS,
     DECREE_INIT,
+    DECREE_KERNEL_PANIC
 };
 
 struct S2E_DECREEMON_COMMAND_PROCESS_LOAD {
@@ -185,6 +186,11 @@ struct S2E_DECREEMON_COMMAND_INIT {
     uint64_t task_struct_pid_offset;
 } __attribute__((packed));
 
+struct S2E_DECREEMON_COMMAND_KERNEL_PANIC {
+    uint64_t message;
+    uint64_t message_size;
+} __attribute__((packed));
+
 struct S2E_DECREEMON_COMMAND {
     uint64_t version;
     enum S2E_DECREEMON_COMMANDS Command;
@@ -204,6 +210,7 @@ struct S2E_DECREEMON_COMMAND {
         struct S2E_DECREEMON_COMMAND_UPDATE_MEMORY_MAP UpdateMemoryMap;
         struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS CbParams;
         struct S2E_DECREEMON_COMMAND_INIT Init;
+        struct S2E_DECREEMON_COMMAND_KERNEL_PANIC Panic;
     };
     char currentName[32]; // not NULL terminated
 } __attribute__((packed));
