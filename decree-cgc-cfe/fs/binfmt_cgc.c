@@ -77,15 +77,15 @@
 #endif
 
 #if 0
-#define	DEBUG_CGC
+#define DEBUG_CGC
 #endif
 
-#define CGC_MAGIC_PAGE		0x4347c000
-#define CGC_MIN_PAGE_SIZE	4096
-#define	CGC_MIN_ALIGN		CGC_MIN_PAGE_SIZE
+#define CGC_MAGIC_PAGE 0x4347c000
+#define CGC_MIN_PAGE_SIZE 4096
+#define CGC_MIN_ALIGN CGC_MIN_PAGE_SIZE
 
-#define CGC_PAGESTART(_v) ((_v) & ~(unsigned long)(CGC_MIN_ALIGN-1))
-#define CGC_PAGEOFFSET(_v) ((_v) & (CGC_MIN_ALIGN-1))
+#define CGC_PAGESTART(_v) ((_v) & ~(unsigned long)(CGC_MIN_ALIGN - 1))
+#define CGC_PAGEOFFSET(_v) ((_v) & (CGC_MIN_ALIGN - 1))
 #define CGC_PAGEALIGN(_v) (((_v) + CGC_MIN_ALIGN - 1) & ~(CGC_MIN_ALIGN - 1))
 
 struct cgc_params {
@@ -95,69 +95,70 @@ struct cgc_params {
 static int load_cgcos_binary(struct linux_binprm *);
 static int cgc_core_dump(struct coredump_params *);
 static int cgc_parse_args(struct linux_binprm *, struct cgc_params *);
-static int cgc_parse_arg(struct linux_binprm *, const char *, struct cgc_params *);
+static int cgc_parse_arg(struct linux_binprm *, const char *,
+			 struct cgc_params *);
 
 static void s2e_decree_set_args(int *skip_rng);
 
 static int flag_relaxed_headers __read_mostly = 0;
 
 /* The CGC Executable File Header */
-#define CI_NIDENT   16
+#define CI_NIDENT 16
 typedef struct CGC32_hdr {
-	uint8_t		ci_mag0;	/* 0x7f */
-	uint8_t		ci_mag1;	/* 'C' */
-	uint8_t		ci_mag2;	/* 'G' */
-	uint8_t		ci_mag3;	/* 'C' */
-	uint8_t		ci_class;	/* 1 */
-	uint8_t		ci_data;	/* 1 */
-	uint8_t		ci_version;	/* 1 */
-	uint8_t		ci_osabi;	/* 'C' */
-	uint8_t		ci_abivers;	/* 1 */
-	uint8_t		ci_pad[7];	
-	uint16_t	c_type;		/* Must be 2 for executable */
-	uint16_t	c_machine;	/* Must be 3 for i386 */
-	uint32_t	c_version;	/* Must be 1 */
-	uint32_t	c_entry;	/* Entry point */
-	uint32_t	c_phoff;	/* Program Header offset */
-	uint32_t	c_shoff;	/* Section Header offset */
-	uint32_t	c_flags;	/* Must be 0 */
-	uint16_t	c_ehsize;	/* CGC header's size */
-	uint16_t	c_phentsize;	/* Program header entry size */
-	uint16_t	c_phnum;	/* # program header entries */
-	uint16_t	c_shentsize;	/* Section header entry size */
-	uint16_t	c_shnum;	/* # section header entries */
-	uint16_t	c_shstrndx;	/* sect header # of str table */
+	uint8_t ci_mag0;    /* 0x7f */
+	uint8_t ci_mag1;    /* 'C' */
+	uint8_t ci_mag2;    /* 'G' */
+	uint8_t ci_mag3;    /* 'C' */
+	uint8_t ci_class;   /* 1 */
+	uint8_t ci_data;    /* 1 */
+	uint8_t ci_version; /* 1 */
+	uint8_t ci_osabi;   /* 'C' */
+	uint8_t ci_abivers; /* 1 */
+	uint8_t ci_pad[7];
+	uint16_t c_type;      /* Must be 2 for executable */
+	uint16_t c_machine;   /* Must be 3 for i386 */
+	uint32_t c_version;   /* Must be 1 */
+	uint32_t c_entry;     /* Entry point */
+	uint32_t c_phoff;     /* Program Header offset */
+	uint32_t c_shoff;     /* Section Header offset */
+	uint32_t c_flags;     /* Must be 0 */
+	uint16_t c_ehsize;    /* CGC header's size */
+	uint16_t c_phentsize; /* Program header entry size */
+	uint16_t c_phnum;     /* # program header entries */
+	uint16_t c_shentsize; /* Section header entry size */
+	uint16_t c_shnum;     /* # section header entries */
+	uint16_t c_shstrndx;  /* sect header # of str table */
 } CGC32_hdr;
 
 /* The CGC Executable Program Header */
 typedef struct CGC32_phdr {
-	uint32_t	p_type;		/* Section type */
-#define PT_NULL		0   		/* Unused header */
-#define PT_LOAD		1   		/* Segment is loaded into mem */
-#define PT_PHDR		6   		/* Program header tbl itself */
-#define PT_CGCPOV2	0x6ccccccc 	/* CFE Type 2 PoV flag sect */
-	uint32_t	p_offset;	/* Offset into the file */
-	uint32_t	p_vaddr;	/* Virtial program address */
-	uint32_t	p_paddr;	/* Set to zero */
-	uint32_t	p_filesz;	/* Section bytes in the file */
-	uint32_t	p_memsz;	/* Section bytes in memory */
-	uint32_t	p_flags;	/* section flags */
-#define	CPF_X		(1<<0)		/* Mapped executable */
-#define	CPF_W		(1<<1)		/* Mapped writeable */
-#define	CPF_R		(1<<2)		/* Mapped readable */
+	uint32_t p_type;      /* Section type */
+#define PT_NULL 0	     /* Unused header */
+#define PT_LOAD 1	     /* Segment is loaded into mem */
+#define PT_PHDR 6	     /* Program header tbl itself */
+#define PT_CGCPOV2 0x6ccccccc /* CFE Type 2 PoV flag sect */
+	uint32_t p_offset;    /* Offset into the file */
+	uint32_t p_vaddr;     /* Virtial program address */
+	uint32_t p_paddr;     /* Set to zero */
+	uint32_t p_filesz;    /* Section bytes in the file */
+	uint32_t p_memsz;     /* Section bytes in memory */
+	uint32_t p_flags;     /* section flags */
+#define CPF_X (1 << 0)	/* Mapped executable */
+#define CPF_W (1 << 1)	/* Mapped writeable */
+#define CPF_R (1 << 2)	/* Mapped readable */
 	/* Acceptable flag combinations are:
 	 *	CPF_R
 	 *	CPF_R|CPF_W
 	 *	CPF_R|CPF_X
 	 *	CPF_R|CPF_W|CPF_X
 	 */
-					
-	uint32_t	p_align;	/* Bytes at which to align the
-					 * section in memory.
-					 * 0 or 1:	no alignment
-					 * 4:		32bit alignment
-					 * 4096:	page alignment
-					 */
+
+	uint32_t p_align; /* Bytes at which to align the
+			   * section in memory.
+			   * 0 or 1:	no alignment
+			   * 4:		32bit alignment
+			   * 4096:	page alignment
+			   */
 } CGC32_Phdr;
 
 static struct linux_binfmt cgcos_format = {
@@ -206,12 +207,12 @@ static size_t get_note_info_size(struct elf_note_info *);
 static int write_note_info(struct elf_note_info *, struct coredump_params *);
 static int writenote(struct memelfnote *, struct coredump_params *);
 static void fill_elf_note_phdr(struct elf_phdr *, int, loff_t);
-static void fill_note(struct memelfnote *, const char *, int, 
-		      unsigned int, void *);
+static void fill_note(struct memelfnote *, const char *, int, unsigned int,
+		      void *);
 static void fill_elf_header(struct elfhdr *, int, u16, u32);
 static int fill_thread_core_info(struct elf_thread_core_info *,
-				 const struct user_regset_view *,
-				 long, size_t *);
+				 const struct user_regset_view *, long,
+				 size_t *);
 static void fill_prstatus(struct elf_prstatus *, struct task_struct *, long);
 static int notesize(struct memelfnote *);
 static int fill_psinfo(struct elf_prpsinfo *, struct task_struct *,
@@ -224,8 +225,8 @@ static void do_thread_regset_writeback(struct task_struct *,
 static int fill_files_note(struct memelfnote *);
 static void free_note_info(struct elf_note_info *);
 
-static int
-load_cgcos_binary(struct linux_binprm *bprm) {
+static int load_cgcos_binary(struct linux_binprm *bprm)
+{
 	struct CGC32_hdr hdr;
 	int ret = -ENOEXEC, i;
 	struct CGC32_phdr *phdrs = NULL;
@@ -236,7 +237,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 	struct cgc_params pars;
 
 	memset(&pars, 0, sizeof(pars));
-	
+
 	if (sizeof(hdr) > BINPRM_BUF_SIZE) {
 		ret = kernel_read(bprm->file, 0, (char *)&hdr, sizeof(hdr));
 		if (ret != sizeof(hdr)) {
@@ -247,22 +248,13 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 	} else
 		memcpy(&hdr, bprm->buf, sizeof(hdr));
 
-	if (hdr.ci_mag0 != 0x7f ||
-	    hdr.ci_mag1 != 'C' ||
-	    hdr.ci_mag2 != 'G' ||
-	    hdr.ci_mag3 != 'C' ||
-	    hdr.ci_class != 1 ||
-	    hdr.ci_data != 1 ||
-	    hdr.ci_version != 1 ||
-	    hdr.ci_osabi != 'C' ||
-	    hdr.ci_abivers != 1 ||
-	    hdr.c_type != 2 ||
-	    hdr.c_machine != 3 ||
-	    hdr.c_version != 1 ||
-	    hdr.c_flags != 0 ||
-	    hdr.c_phentsize != sizeof(struct CGC32_phdr) ||
-	    hdr.c_phnum < 1 ||
-	    hdr.c_phnum > 65536U / sizeof(struct CGC32_phdr))
+	if (hdr.ci_mag0 != 0x7f || hdr.ci_mag1 != 'C' || hdr.ci_mag2 != 'G'
+	    || hdr.ci_mag3 != 'C' || hdr.ci_class != 1 || hdr.ci_data != 1
+	    || hdr.ci_version != 1 || hdr.ci_osabi != 'C' || hdr.ci_abivers != 1
+	    || hdr.c_type != 2 || hdr.c_machine != 3 || hdr.c_version != 1
+	    || hdr.c_flags != 0 || hdr.c_phentsize != sizeof(struct CGC32_phdr)
+	    || hdr.c_phnum < 1
+	    || hdr.c_phnum > 65536U / sizeof(struct CGC32_phdr))
 		goto out;
 
 	if (!bprm->file->f_op->mmap)
@@ -281,9 +273,9 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 			ret = -EIO;
 		goto out;
 	}
-    
-    current->cgc_max_transmit = 0;
-    current->cgc_max_receive = 0;
+
+	current->cgc_max_transmit = 0;
+	current->cgc_max_receive = 0;
 
 	/* need to parse the arguments  */
 	if ((ret = cgc_parse_args(bprm, &pars)) != 0)
@@ -304,8 +296,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 	current->personality = PER_CGCOS;
 
 	{
-		struct rlimit new_rlim = { 8 * 1024 * 1024,
-					   8 * 1024 * 1024 };
+		struct rlimit new_rlim = {8 * 1024 * 1024, 8 * 1024 * 1024};
 		do_prlimit(current, RLIMIT_STACK, &new_rlim, NULL);
 	}
 
@@ -313,15 +304,15 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 
 	if ((ret = setup_arg_pages(bprm, 0xbaaab000, EXSTACK_ENABLE_X)) < 0)
 		goto out_kill;
-	   
+
 	current->mm->start_stack = bprm->p;
 
 	current->signal->maxrss = 0;
 	current->min_flt = current->signal->min_flt = 0;
-	
+
 	bss = brk = 0;
 	start_code = ~0UL;
-	end_code = start_data =	end_data = 0;
+	end_code = start_data = end_data = 0;
 
 	for (i = 0; i < hdr.c_phnum; i++) {
 		struct CGC32_phdr *phdr = &phdrs[i];
@@ -344,8 +335,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 				goto out_kill;
 		}
 
-		if (phdr->p_type != PT_LOAD ||
-		    phdr->p_memsz == 0)
+		if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0)
 			continue;
 
 		prot = 0;
@@ -373,10 +363,9 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 		 * allowed task size. Note that p_filesz must always be
 		 * <= p_memsz so it is only necessary to check p_memsz.
 		 */
-		if (BAD_ADDR(phdr->p_vaddr) ||
-		    phdr->p_filesz > phdr->p_memsz ||
-		    phdr->p_memsz > TASK_SIZE ||
-		    TASK_SIZE - phdr->p_memsz < phdr->p_vaddr) {
+		if (BAD_ADDR(phdr->p_vaddr) || phdr->p_filesz > phdr->p_memsz
+		    || phdr->p_memsz > TASK_SIZE
+		    || TASK_SIZE - phdr->p_memsz < phdr->p_vaddr) {
 			/* set_brk can never work. avoid overflows. */
 			ret = -EINVAL;
 			goto out_kill;
@@ -437,7 +426,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 
 	{
 		int cpu = get_cpu();
-			
+
 		for (i = 0; i < GDT_ENTRY_TLS_ENTRIES; i++) {
 			current->thread.tls_array[i].a = 0;
 			current->thread.tls_array[i].b = 0;
@@ -445,7 +434,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 		load_TLS(&current->thread, cpu);
 		put_cpu();
 	}
-	
+
 #ifdef ELF_PLAT_INIT
 	/*
 	 * The ABI may specify that certain registers be set up in special
@@ -476,11 +465,10 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 		if (ret != 0)
 			goto out_kill;
 
-		addr = vm_mmap(NULL, CGC_MAGIC_PAGE, PAGE_SIZE,
-			       PROT_READ | PROT_WRITE,
-			       MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE |
-			       MAP_FIXED,
-			       0);
+		addr = vm_mmap(
+			NULL, CGC_MAGIC_PAGE, PAGE_SIZE, PROT_READ | PROT_WRITE,
+			MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE | MAP_FIXED,
+			0);
 		if (BAD_ADDR(addr)) {
 			ret = -EFAULT;
 			goto out_kill;
@@ -494,9 +482,9 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 					goto out_kill;
 			} else
 				get_random_bytes(&v, sizeof(v));
-			
-			if (copy_to_user((void __user *)(addr + i),
-					 &v, sizeof(v))) {
+
+			if (copy_to_user((void __user *)(addr + i), &v,
+					 sizeof(v))) {
 				ret = -EFAULT;
 				goto out_kill;
 			}
@@ -515,7 +503,7 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 
 		while (pars.skip_rng) {
 			u8 rnd;
-			
+
 			if (current->cgc_rng) {
 				ret = crypto_rng_get_bytes(current->cgc_rng,
 							   &rnd, sizeof(rnd));
@@ -531,9 +519,9 @@ load_cgcos_binary(struct linux_binprm *bprm) {
 			pars.skip_rng -= sizeof(rnd);
 		}
 	}
-	
+
 	flush_signal_handlers(current, 1);
-	current->sighand->action[SIGPIPE-1].sa.sa_handler = SIG_IGN;
+	current->sighand->action[SIGPIPE - 1].sa.sa_handler = SIG_IGN;
 	set_dumpable(current->mm, SUID_DUMP_USER);
 
 	start_thread(regs, hdr.c_entry, bprm->p);
@@ -545,12 +533,16 @@ out:
 		kfree(phdrs);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_printf("binfmt_cgc: detected process load %s ret=%d\n", bprm->interp, ret);
+		s2e_printf("binfmt_cgc: detected process load %s ret=%d\n",
+			   bprm->interp, ret);
 	}
 
 	if (ret == 0 && s2e_decree_monitor_enabled) {
-		s2e_decree_process_load(current->pid, current->comm, current, &hdr, sizeof(hdr), bprm->interp, hdr.c_entry);
-		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+		s2e_decree_process_load(current->pid, current->comm, current,
+					&hdr, sizeof(hdr), bprm->interp,
+					hdr.c_entry);
+		s2e_decree_update_memory_map(current->pid, current->comm,
+					     current->mm);
 	}
 
 	return (ret);
@@ -572,7 +564,7 @@ static void s2e_decree_set_args(int *skip_rng)
 	params.cgc_max_transmit = current->cgc_max_transmit;
 	params.cgc_max_receive = current->cgc_max_receive;
 	params.skip_rng_count = *skip_rng;
-	params.cgc_seed_ptr = (uintptr_t) current->cgc_seed;
+	params.cgc_seed_ptr = (uintptr_t)current->cgc_seed;
 	params.cgc_seed_len = current->cgc_seed_len;
 
 	s2e_decree_do_set_args(current->pid, current->comm, &params);
@@ -587,7 +579,8 @@ static void s2e_decree_set_args(int *skip_rng)
 		int ret;
 
 		if (params.cgc_seed_len > sizeof(params.cgc_seed)) {
-			s2e_kill_state(-1, "Length of seed exceeds buffer size");
+			s2e_kill_state(-1,
+				       "Length of seed exceeds buffer size");
 		}
 
 		if (current->cgc_rng) {
@@ -599,7 +592,8 @@ static void s2e_decree_set_args(int *skip_rng)
 			s2e_kill_state(-1, "Could not allocate rng");
 		}
 
-		ret = crypto_rng_reset(current->cgc_rng, params.cgc_seed, params.cgc_seed_len);
+		ret = crypto_rng_reset(current->cgc_rng, params.cgc_seed,
+				       params.cgc_seed_len);
 		if (ret < 0) {
 			s2e_kill_state(-1, "Could not reset rng");
 		}
@@ -613,8 +607,8 @@ static void s2e_decree_set_args(int *skip_rng)
 	}
 }
 
-static int
-cgc_parse_args(struct linux_binprm *bprm, struct cgc_params *pars) {
+static int cgc_parse_args(struct linux_binprm *bprm, struct cgc_params *pars)
+{
 	int i, err = 0;
 
 	for (i = 1; i < bprm->argc; i++) {
@@ -650,12 +644,13 @@ cgc_parse_args(struct linux_binprm *bprm, struct cgc_params *pars) {
 	return (err);
 }
 
-static int
-cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
-	      struct cgc_params *pars) {
+static int cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
+			 struct cgc_params *pars)
+{
 	const char seed_name[] = "seed=", schedule_name[] = "sched=",
-		skiprng_name[] = "skiprng=", max_transmit_name[] = "max_transmit=",
-        max_receive_name[] = "max_receive=";
+		   skiprng_name[] = "skiprng=",
+		   max_transmit_name[] = "max_transmit=",
+		   max_receive_name[] = "max_receive=";
 
 	s2e_printf("Parsing arg %s\n", arg);
 
@@ -667,7 +662,7 @@ cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
 
 		memset(&par, 0, sizeof(par));
 		rs = get_options(arg + strlen(schedule_name),
-				 sizeof(args)/sizeof(args[0]), args);
+				 sizeof(args) / sizeof(args[0]), args);
 
 		if (*rs != '\0' || args[0] != 2)
 			return (-EINVAL);
@@ -727,7 +722,7 @@ cgc_parse_arg(struct linux_binprm *bprm, const char *arg,
 
 		return ret;
 
-out_seed:
+	out_seed:
 		kfree(seed);
 		return (ret);
 	}
@@ -736,9 +731,9 @@ out_seed:
 	if (strncmp(arg, skiprng_name, strlen(skiprng_name)) == 0) {
 		int args[2];
 		char *rs;
-		
+
 		rs = get_options(arg + strlen(skiprng_name),
-				 sizeof(args)/sizeof(args[0]), args);
+				 sizeof(args) / sizeof(args[0]), args);
 
 		if (*rs != '\0' || args[0] != 1 || args[1] < 0)
 			return (-EINVAL);
@@ -746,40 +741,39 @@ out_seed:
 		return (0);
 	}
 
-	/* max_receive=bytes */ 
+	/* max_receive=bytes */
 	if (strncmp(arg, max_receive_name, strlen(max_receive_name)) == 0) {
 		int args[2];
 		char *rs;
-		
+
 		rs = get_options(arg + strlen(max_receive_name),
-				 sizeof(args)/sizeof(args[0]), args);
+				 sizeof(args) / sizeof(args[0]), args);
 
 		if (*rs != '\0' || args[0] != 1 || args[1] < 0)
 			return (-EINVAL);
-        current->cgc_max_receive = args[1];
+		current->cgc_max_receive = args[1];
 		return (0);
 	}
 
-	/* max_transmit=bytes */ 
+	/* max_transmit=bytes */
 	if (strncmp(arg, max_transmit_name, strlen(max_transmit_name)) == 0) {
 		int args[2];
 		char *rs;
-		
+
 		rs = get_options(arg + strlen(max_transmit_name),
-				 sizeof(args)/sizeof(args[0]), args);
+				 sizeof(args) / sizeof(args[0]), args);
 
 		if (*rs != '\0' || args[0] != 1 || args[1] < 0)
 			return (-EINVAL);
-        
-        current->cgc_max_transmit = args[1];
+
+		current->cgc_max_transmit = args[1];
 		return (0);
 	}
 
 	return (0);
 }
 
-static int
-set_brk(unsigned long start, unsigned long end)
+static int set_brk(unsigned long start, unsigned long end)
 {
 	start = CGC_PAGEALIGN(start);
 	end = CGC_PAGEALIGN(end);
@@ -793,8 +787,9 @@ set_brk(unsigned long start, unsigned long end)
 	return 0;
 }
 
-static unsigned long
-cgc_map(struct file *filep, struct CGC32_phdr *phdr, int prot, int type) {
+static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
+			     int prot, int type)
+{
 	unsigned long addr, zaddr;
 	unsigned long lo, hi;
 
@@ -803,9 +798,9 @@ cgc_map(struct file *filep, struct CGC32_phdr *phdr, int prot, int type) {
 	if (phdr->p_filesz > 0) {
 		/* map in the part of the binary corresponding to filesz */
 		addr = vm_mmap(filep, CGC_PAGESTART(phdr->p_vaddr),
-			       CGC_PAGEALIGN(phdr->p_filesz + CGC_PAGEOFFSET(phdr->p_vaddr)),
-			       prot, type,
-			       CGC_PAGESTART(phdr->p_offset));
+			       CGC_PAGEALIGN(phdr->p_filesz
+					     + CGC_PAGEOFFSET(phdr->p_vaddr)),
+			       prot, type, CGC_PAGESTART(phdr->p_offset));
 		if (BAD_ADDR(addr))
 			return (addr);
 		lo = CGC_PAGEALIGN(phdr->p_vaddr + phdr->p_filesz);
@@ -818,8 +813,8 @@ cgc_map(struct file *filep, struct CGC32_phdr *phdr, int prot, int type) {
 
 	/* map anon pages for the rest (no prefault) */
 	if ((hi - lo) > 0) {
-		zaddr = vm_mmap(NULL, lo, hi - lo,
-				prot, type | MAP_ANONYMOUS, 0UL);
+		zaddr = vm_mmap(NULL, lo, hi - lo, prot, type | MAP_ANONYMOUS,
+				0UL);
 		if (BAD_ADDR(zaddr))
 			return (zaddr);
 	}
@@ -843,8 +838,7 @@ cgc_map(struct file *filep, struct CGC32_phdr *phdr, int prot, int type) {
    contain the junk from the file that should not
    be in memory
  */
-static int
-padzero(unsigned long bss)
+static int padzero(unsigned long bss)
 {
 	unsigned long nbyte;
 
@@ -857,8 +851,7 @@ padzero(unsigned long bss)
 	return 0;
 }
 
-static int
-cgc_core_dump(struct coredump_params *cprm)
+static int cgc_core_dump(struct coredump_params *cprm)
 {
 	int dumped = 0, reset_fs = 0;
 	mm_segment_t fs;
@@ -866,7 +859,7 @@ cgc_core_dump(struct coredump_params *cprm)
 	struct vm_area_struct *vma;
 	struct elfhdr *elf = NULL;
 	loff_t offset = 0, dataoff;
-	struct elf_note_info info = { };
+	struct elf_note_info info = {};
 	struct elf_phdr *phdr4note = NULL;
 	struct elf_shdr *shdr4extnum = NULL;
 	Elf_Half e_phnum;
@@ -934,7 +927,7 @@ cgc_core_dump(struct coredump_params *cprm)
 
 #ifndef EI_ABIVERSION
 /* kernel elf.h is missing this defn */
-#define EI_ABIVERSION	8
+#define EI_ABIVERSION 8
 #endif
 
 	elf->e_ident[EI_MAG0] = 0x7f;
@@ -975,7 +968,7 @@ cgc_core_dump(struct coredump_params *cprm)
 	if (!elf_core_write_extra_phdrs(cprm, offset))
 		goto out;
 
- 	/* write out the notes section */
+	/* write out the notes section */
 	if (!write_note_info(&info, cprm))
 		goto out;
 
@@ -1030,8 +1023,7 @@ out:
 	return (dumped);
 }
 
-static void
-free_note_info(struct elf_note_info *info)
+static void free_note_info(struct elf_note_info *info)
 {
 	struct elf_thread_core_info *threads = info->thread;
 	while (threads) {
@@ -1047,8 +1039,7 @@ free_note_info(struct elf_note_info *info)
 	vfree(info->files.data);
 }
 
-static void
-fill_elf_note_phdr(struct elf_phdr *phdr, int sz, loff_t offset)
+static void fill_elf_note_phdr(struct elf_phdr *phdr, int sz, loff_t offset)
 {
 	phdr->p_type = PT_NOTE;
 	phdr->p_offset = offset;
@@ -1060,23 +1051,22 @@ fill_elf_note_phdr(struct elf_phdr *phdr, int sz, loff_t offset)
 	phdr->p_align = 0;
 }
 
-static int
-fill_psinfo(struct elf_prpsinfo *psinfo, struct task_struct *p,
-	    struct mm_struct *mm)
+static int fill_psinfo(struct elf_prpsinfo *psinfo, struct task_struct *p,
+		       struct mm_struct *mm)
 {
 	const struct cred *cred;
 	unsigned int i, len;
-	
+
 	/* first copy the parameters from user space */
 	memset(psinfo, 0, sizeof(struct elf_prpsinfo));
 
 	len = mm->arg_end - mm->arg_start;
 	if (len >= ELF_PRARGSZ)
-		len = ELF_PRARGSZ-1;
+		len = ELF_PRARGSZ - 1;
 	if (copy_from_user(&psinfo->pr_psargs,
-		           (const char __user *)mm->arg_start, len))
+			   (const char __user *)mm->arg_start, len))
 		return -EFAULT;
-	for(i = 0; i < len; i++)
+	for (i = 0; i < len; i++)
 		if (psinfo->pr_psargs[i] == 0)
 			psinfo->pr_psargs[i] = ' ';
 	psinfo->pr_psargs[len] = 0;
@@ -1100,14 +1090,13 @@ fill_psinfo(struct elf_prpsinfo *psinfo, struct task_struct *p,
 	SET_GID(psinfo->pr_gid, from_kgid_munged(cred->user_ns, cred->gid));
 	rcu_read_unlock();
 	strncpy(psinfo->pr_fname, p->comm, sizeof(psinfo->pr_fname));
-	
+
 	return 0;
 }
 
-static void
-fill_auxv_note(struct memelfnote *note, struct mm_struct *mm)
+static void fill_auxv_note(struct memelfnote *note, struct mm_struct *mm)
 {
-	elf_addr_t *auxv = (elf_addr_t *) mm->saved_auxv;
+	elf_addr_t *auxv = (elf_addr_t *)mm->saved_auxv;
 	int i = 0;
 	do
 		i += 2;
@@ -1115,20 +1104,18 @@ fill_auxv_note(struct memelfnote *note, struct mm_struct *mm)
 	fill_note(note, "CORE", NT_AUXV, i * sizeof(elf_addr_t), auxv);
 }
 
-static void
-fill_siginfo_note(struct memelfnote *note, user_siginfo_t *csigdata,
-		  const siginfo_t *siginfo)
+static void fill_siginfo_note(struct memelfnote *note, user_siginfo_t *csigdata,
+			      const siginfo_t *siginfo)
 {
 	mm_segment_t old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	copy_siginfo_to_user((user_siginfo_t __user *) csigdata, siginfo);
+	copy_siginfo_to_user((user_siginfo_t __user *)csigdata, siginfo);
 	set_fs(old_fs);
 	fill_note(note, "CORE", NT_SIGINFO, sizeof(*csigdata), csigdata);
 }
 
-static void
-fill_note(struct memelfnote *note, const char *name, int type,
-	  unsigned int sz, void *data)
+static void fill_note(struct memelfnote *note, const char *name, int type,
+		      unsigned int sz, void *data)
 {
 	note->name = name;
 	note->type = type;
@@ -1136,8 +1123,7 @@ fill_note(struct memelfnote *note, const char *name, int type,
 	note->data = data;
 }
 
-static int
-notesize(struct memelfnote *en)
+static int notesize(struct memelfnote *en)
 {
 	int sz;
 
@@ -1148,8 +1134,8 @@ notesize(struct memelfnote *en)
 	return sz;
 }
 
-static void
-fill_prstatus(struct elf_prstatus *prstatus, struct task_struct *p, long signr)
+static void fill_prstatus(struct elf_prstatus *prstatus, struct task_struct *p,
+			  long signr)
 {
 	prstatus->pr_info.si_signo = prstatus->pr_cursig = signr;
 	prstatus->pr_sigpend = p->pending.signal.sig[0];
@@ -1181,10 +1167,9 @@ fill_prstatus(struct elf_prstatus *prstatus, struct task_struct *p, long signr)
 	cputime_to_timeval(p->signal->cstime, &prstatus->pr_cstime);
 }
 
-static int
-fill_thread_core_info(struct elf_thread_core_info *t,
-		      const struct user_regset_view *view,
-		      long signr, size_t *total)
+static int fill_thread_core_info(struct elf_thread_core_info *t,
+				 const struct user_regset_view *view,
+				 long signr, size_t *total)
 {
 	unsigned int i;
 
@@ -1195,12 +1180,12 @@ fill_thread_core_info(struct elf_thread_core_info *t,
 	 * We assume that regset 0 is NT_PRSTATUS.
 	 */
 	fill_prstatus(&t->prstatus, t->task, signr);
-	(void) view->regsets[0].get(t->task, &view->regsets[0],
-				    0, PR_REG_SIZE(t->prstatus.pr_reg),
-				    PR_REG_PTR(&t->prstatus), NULL);
+	(void)view->regsets[0].get(t->task, &view->regsets[0], 0,
+				   PR_REG_SIZE(t->prstatus.pr_reg),
+				   PR_REG_PTR(&t->prstatus), NULL);
 
-	fill_note(&t->notes[0], "CORE", NT_PRSTATUS,
-		  PRSTATUS_SIZE(t->prstatus), &t->prstatus);
+	fill_note(&t->notes[0], "CORE", NT_PRSTATUS, PRSTATUS_SIZE(t->prstatus),
+		  &t->prstatus);
 	*total += notesize(&t->notes[0]);
 
 	do_thread_regset_writeback(t->task, &view->regsets[0]);
@@ -1213,22 +1198,21 @@ fill_thread_core_info(struct elf_thread_core_info *t,
 	for (i = 1; i < view->n; ++i) {
 		const struct user_regset *regset = &view->regsets[i];
 		do_thread_regset_writeback(t->task, regset);
-		if (regset->core_note_type && regset->get &&
-		    (!regset->active || regset->active(t->task, regset))) {
+		if (regset->core_note_type && regset->get
+		    && (!regset->active || regset->active(t->task, regset))) {
 			int ret;
 			size_t size = regset->n * regset->size;
 			void *data = kmalloc(size, GFP_KERNEL);
 			if (unlikely(!data))
 				return 0;
-			ret = regset->get(t->task, regset,
-					  0, size, data, NULL);
+			ret = regset->get(t->task, regset, 0, size, data, NULL);
 			if (unlikely(ret))
 				kfree(data);
 			else {
 				if (regset->core_note_type != NT_PRFPREG)
 					fill_note(&t->notes[i], "LINUX",
-						  regset->core_note_type,
-						  size, data);
+						  regset->core_note_type, size,
+						  data);
 				else {
 					SET_PR_FPVALID(&t->prstatus, 1);
 					fill_note(&t->notes[i], "CORE",
@@ -1242,9 +1226,9 @@ fill_thread_core_info(struct elf_thread_core_info *t,
 	return 1;
 }
 
-static int
-fill_note_info(struct elfhdr *elf, int phdrs, struct elf_note_info *info,
-	       const siginfo_t *siginfo, struct pt_regs *regs)
+static int fill_note_info(struct elfhdr *elf, int phdrs,
+			  struct elf_note_info *info, const siginfo_t *siginfo,
+			  struct pt_regs *regs)
 {
 	struct task_struct *dump_task = current;
 	const struct user_regset_view *view = task_user_regset_view(dump_task);
@@ -1276,8 +1260,8 @@ fill_note_info(struct elfhdr *elf, int phdrs, struct elf_note_info *info,
 	 * Sanity check.  We rely on regset 0 being in NT_PRSTATUS,
 	 * since it is our one special case.
 	 */
-	if (unlikely(info->thread_notes == 0) ||
-	    unlikely(view->regsets[0].core_note_type != NT_PRSTATUS)) {
+	if (unlikely(info->thread_notes == 0)
+	    || unlikely(view->regsets[0].core_note_type != NT_PRSTATUS)) {
 		WARN_ON(1);
 		return 0;
 	}
@@ -1285,8 +1269,7 @@ fill_note_info(struct elfhdr *elf, int phdrs, struct elf_note_info *info,
 	/*
 	 * Initialize the ELF file header.
 	 */
-	fill_elf_header(elf, phdrs,
-			view->e_machine, view->e_flags);
+	fill_elf_header(elf, phdrs, view->e_machine, view->e_flags);
 
 	/*
 	 * Allocate a structure for each thread.
@@ -1316,7 +1299,8 @@ fill_note_info(struct elfhdr *elf, int phdrs, struct elf_note_info *info,
 	 * Now fill in each thread's information.
 	 */
 	for (t = info->thread; t != NULL; t = t->next)
-		if (!fill_thread_core_info(t, view, siginfo->si_signo, &info->size))
+		if (!fill_thread_core_info(t, view, siginfo->si_signo,
+					   &info->size))
 			return 0;
 
 	/*
@@ -1337,21 +1321,21 @@ fill_note_info(struct elfhdr *elf, int phdrs, struct elf_note_info *info,
 	return 1;
 }
 
-static int
-writenote(struct memelfnote *men, struct coredump_params *cprm)
+static int writenote(struct memelfnote *men, struct coredump_params *cprm)
 {
 	struct elf_note en;
 	en.n_namesz = strlen(men->name) + 1;
 	en.n_descsz = men->datasz;
 	en.n_type = men->type;
 
-	return dump_emit(cprm, &en, sizeof(en)) &&
-	    dump_emit(cprm, men->name, en.n_namesz) && dump_align(cprm, 4) &&
-	    dump_emit(cprm, men->data, men->datasz) && dump_align(cprm, 4);
+	return dump_emit(cprm, &en, sizeof(en))
+	       && dump_emit(cprm, men->name, en.n_namesz) && dump_align(cprm, 4)
+	       && dump_emit(cprm, men->data, men->datasz)
+	       && dump_align(cprm, 4);
 }
 
-static void fill_elf_header(struct elfhdr *elf, int segs,
-			    u16 machine, u32 flags)
+static void fill_elf_header(struct elfhdr *elf, int segs, u16 machine,
+			    u32 flags)
 {
 	memset(elf, 0, sizeof(*elf));
 
@@ -1371,14 +1355,13 @@ static void fill_elf_header(struct elfhdr *elf, int segs,
 	elf->e_phnum = segs;
 }
 
-static size_t
-get_note_info_size(struct elf_note_info *info)
+static size_t get_note_info_size(struct elf_note_info *info)
 {
 	return info->size;
 }
 
-static int
-write_note_info(struct elf_note_info *info, struct coredump_params *cprm)
+static int write_note_info(struct elf_note_info *info,
+			   struct coredump_params *cprm)
 {
 	bool first = 1;
 	struct elf_thread_core_info *t = info->thread;
@@ -1395,13 +1378,11 @@ write_note_info(struct elf_note_info *info, struct coredump_params *cprm)
 			return 0;
 		if (first && !writenote(&info->auxv, cprm))
 			return 0;
-		if (first && info->files.data &&
-				!writenote(&info->files, cprm))
+		if (first && info->files.data && !writenote(&info->files, cprm))
 			return 0;
 
 		for (i = 1; i < info->thread_notes; ++i)
-			if (t->notes[i].data &&
-			    !writenote(&t->notes[i], cprm))
+			if (t->notes[i].data && !writenote(&t->notes[i], cprm))
 				return 0;
 
 		first = 0;
@@ -1411,15 +1392,14 @@ write_note_info(struct elf_note_info *info, struct coredump_params *cprm)
 	return 1;
 }
 
-static void
-do_thread_regset_writeback(struct task_struct *task,
-			   const struct user_regset *regset)
+static void do_thread_regset_writeback(struct task_struct *task,
+				       const struct user_regset *regset)
 {
 	if (regset->writeback)
 		regset->writeback(task, regset, 1);
 }
 
-#define MAX_FILE_NOTE_SIZE (4*1024*1024)
+#define MAX_FILE_NOTE_SIZE (4 * 1024 * 1024)
 /*
  * Format of NT_FILE note:
  *
@@ -1431,8 +1411,7 @@ do_thread_regset_writeback(struct task_struct *task,
  *   long file_ofs
  * followed by COUNT filenames in ASCII: "FILE1" NUL "FILE2" NUL...
  */
-static int
-fill_files_note(struct memelfnote *note)
+static int fill_files_note(struct memelfnote *note)
 {
 	struct vm_area_struct *vma;
 	unsigned count, size, names_ofs, remaining, n;
@@ -1445,7 +1424,7 @@ fill_files_note(struct memelfnote *note)
 	size = count * 64;
 
 	names_ofs = (2 + 3 * count) * sizeof(data[0]);
- alloc:
+alloc:
 	if (size >= MAX_FILE_NOTE_SIZE) /* paranoia check */
 		return -EINVAL;
 	size = round_up(size, PAGE_SIZE);
@@ -1507,10 +1486,10 @@ fill_files_note(struct memelfnote *note)
 	return 0;
 }
 
-static unsigned long
-vma_dump_size(struct vm_area_struct *vma, unsigned long mm_flags)
+static unsigned long vma_dump_size(struct vm_area_struct *vma,
+				   unsigned long mm_flags)
 {
-#define FILTER(type)	(mm_flags & (1UL << MMF_DUMP_##type))
+#define FILTER(type) (mm_flags & (1UL << MMF_DUMP_##type))
 
 	if (vma->vm_flags & VM_DONTDUMP)
 		return 0;
@@ -1530,8 +1509,9 @@ vma_dump_size(struct vm_area_struct *vma, unsigned long mm_flags)
 
 	/* By default, dump shared memory if mapped from an anonymous file. */
 	if (vma->vm_flags & VM_SHARED) {
-		if (file_inode(vma->vm_file)->i_nlink == 0 ?
-		    FILTER(ANON_SHARED) : FILTER(MAPPED_SHARED))
+		if (file_inode(vma->vm_file)->i_nlink == 0
+			    ? FILTER(ANON_SHARED)
+			    : FILTER(MAPPED_SHARED))
 			goto whole;
 		return 0;
 	}
@@ -1550,9 +1530,9 @@ vma_dump_size(struct vm_area_struct *vma, unsigned long mm_flags)
 	 * check for an ELF header.  If we find one, dump the first page to
 	 * aid in determining what was mapped here.
 	 */
-	if (FILTER(ELF_HEADERS) &&
-	    vma->vm_pgoff == 0 && (vma->vm_flags & VM_READ)) {
-		u32 __user *header = (u32 __user *) vma->vm_start;
+	if (FILTER(ELF_HEADERS) && vma->vm_pgoff == 0
+	    && (vma->vm_flags & VM_READ)) {
+		u32 __user *header = (u32 __user *)vma->vm_start;
 		u32 word;
 		mm_segment_t fs = get_fs();
 		/*
@@ -1579,7 +1559,7 @@ vma_dump_size(struct vm_area_struct *vma, unsigned long mm_flags)
 			return PAGE_SIZE;
 	}
 
-#undef	FILTER
+#undef FILTER
 
 	return 0;
 
@@ -1591,36 +1571,36 @@ whole:
  * Every entry in the systen tables is described by this structure.
  */
 struct sysent {
-       void    *se_syscall;    /* function to call */
-       short   se_nargs;       /* number of aguments */
+	void *se_syscall; /* function to call */
+	short se_nargs;   /* number of aguments */
 
-       /*
-        * Theses are only used for syscall tracing.
-        */
-       char    *se_name;       /* name of function */
-       char    *se_args;       /* how to print the argument list */
+	/*
+	 * Theses are only used for syscall tracing.
+	 */
+	char *se_name; /* name of function */
+	char *se_args; /* how to print the argument list */
 };
 
 /* This comes from arch/x86/include/asm/ptrace.h */
 /*
 struct pt_regs {
-        unsigned long ebx;
-        unsigned long ecx;
-        unsigned long edx;
-        unsigned long esi;
-        unsigned long edi;
-        unsigned long ebp;
-        unsigned long eax;
-        unsigned long ds;
-        unsigned long es;
-        unsigned long fs;
-        unsigned long gs;
-        unsigned long orig_eax;
-        unsigned long eip;
-        unsigned long cs;
-        unsigned long flags;
-        unsigned long esp;
-        unsigned long ss;
+	unsigned long ebx;
+	unsigned long ecx;
+	unsigned long edx;
+	unsigned long esi;
+	unsigned long edi;
+	unsigned long ebp;
+	unsigned long eax;
+	unsigned long ds;
+	unsigned long es;
+	unsigned long fs;
+	unsigned long gs;
+	unsigned long orig_eax;
+	unsigned long eip;
+	unsigned long cs;
+	unsigned long flags;
+	unsigned long esp;
+	unsigned long ss;
 };
 */
 
@@ -1649,27 +1629,30 @@ typedef asmlinkage int (*syscall5_t)(int, int, int, int, int);
 /*
  * Marcos to call syscall pointers.
  */
-#define SYSCALL_VOID(sys) \
-       ((syscallv_t)(sys))();
-#define SYSCALL_1ARG(sys, regs) \
-       ((syscall1_t)(sys))((regs)->ebx)
-#define SYSCALL_2ARG(sys, regs) \
-       ((syscall2_t)(sys))((regs)->ebx, (regs)->ecx)
-#define SYSCALL_3ARG(sys, regs) \
-       ((syscall3_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx)
-#define SYSCALL_4ARG(sys, regs) \
-       ((syscall4_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx, (regs)->esi)
-#define SYSCALL_5ARG(sys, regs) \
-       ((syscall5_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx, \
-                           (regs)->esi, (regs)->edi)
+#define SYSCALL_VOID(sys) ((syscallv_t)(sys))();
+#define SYSCALL_1ARG(sys, regs) ((syscall1_t)(sys))((regs)->ebx)
+#define SYSCALL_2ARG(sys, regs) ((syscall2_t)(sys))((regs)->ebx, (regs)->ecx)
+#define SYSCALL_3ARG(sys, regs)                                                \
+	((syscall3_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx)
+#define SYSCALL_4ARG(sys, regs)                                                \
+	((syscall4_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx, (regs)->esi)
+#define SYSCALL_5ARG(sys, regs)                                                \
+	((syscall5_t)(sys))((regs)->ebx, (regs)->ecx, (regs)->edx,             \
+			    (regs)->esi, (regs)->edi)
 
-static int asmlinkage cgcos_allocate(unsigned long len, unsigned long prot, void __user **addr);
+static int asmlinkage cgcos_allocate(unsigned long len, unsigned long prot,
+				     void __user **addr);
 static int asmlinkage cgcos_deallocate(unsigned long ptr, size_t len);
-static int asmlinkage cgcos_random(char __user *buf, size_t count, size_t __user *rnd_out);
-static int asmlinkage cgcos_transmit(int fd, char __user * buf, size_t count, size_t __user *tx_bytes);
-static int asmlinkage cgcos_receive(int fd, char __user * buf, size_t count, size_t __user *rx_bytes);
-static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds, 
-                                   struct timeval __user *timeout, int __user *readyfds);
+static int asmlinkage cgcos_random(char __user *buf, size_t count,
+				   size_t __user *rnd_out);
+static int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
+				     size_t __user *tx_bytes);
+static int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
+				    size_t __user *rx_bytes);
+static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds,
+				   fd_set __user *writefds,
+				   struct timeval __user *timeout,
+				   int __user *readyfds);
 void asmlinkage cgcos_syscall(int segment, struct pt_regs *regs);
 void asmlinkage cgcos_sysenter(int segment, struct pt_regs *regs);
 void cgcos_syscall_dummy(int, struct pt_regs *);
@@ -1683,24 +1666,28 @@ long s2e_copy_to_user(void __user *to, const void *from, long n)
 {
 	long ret;
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_copy_to_user(current->pid, current->comm, to, from, n, 0, 0);
+		s2e_decree_copy_to_user(current->pid, current->comm, to, from,
+					n, 0, 0);
 	}
 	ret = copy_to_user(to, from, n);
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_copy_to_user(current->pid, current->comm, to, from, n, 1, ret);
+		s2e_decree_copy_to_user(current->pid, current->comm, to, from,
+					n, 1, ret);
 	}
 	return ret;
 }
 
-static int asmlinkage
-cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds,
-	     struct timeval __user *timeout, int __user *readyfds) {
+static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds,
+				   fd_set __user *writefds,
+				   struct timeval __user *timeout,
+				   int __user *readyfds)
+{
 	struct timespec end_time, *to = NULL;
 	struct timeval tv;
 	int res, invoke_orig;
 
-	if (readyfds != NULL &&
-	    !access_ok(VERIFY_WRITE, readyfds, sizeof(*readyfds)))
+	if (readyfds != NULL
+	    && !access_ok(VERIFY_WRITE, readyfds, sizeof(*readyfds)))
 		return (-EFAULT);
 
 	if (timeout != NULL) {
@@ -1720,12 +1707,17 @@ cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds,
 	if (s2e_decree_monitor_enabled) {
 		invoke_orig = 1;
 		if (timeout != NULL) {
-			res = s2e_decree_waitfds(current->pid, current->comm, nfds, true, to->tv_sec, to->tv_nsec, &invoke_orig);
+			res = s2e_decree_waitfds(current->pid, current->comm,
+						 nfds, true, to->tv_sec,
+						 to->tv_nsec, &invoke_orig);
 		} else {
-			res = s2e_decree_waitfds(current->pid, current->comm, nfds, false, to->tv_sec, to->tv_nsec, &invoke_orig);
+			res = s2e_decree_waitfds(current->pid, current->comm,
+						 nfds, false, to->tv_sec,
+						 to->tv_nsec, &invoke_orig);
 		}
 		if (invoke_orig) {
-			res = core_sys_select(nfds, readfds, writefds, NULL, to);
+			res = core_sys_select(nfds, readfds, writefds, NULL,
+					      to);
 		}
 	} else {
 		res = core_sys_select(nfds, readfds, writefds, NULL, to);
@@ -1736,13 +1728,15 @@ cgcos_fdwait(int nfds, fd_set __user *readfds, fd_set __user *writefds,
 
 	if (res < 0)
 		return (res);
-	if (readyfds != NULL && s2e_copy_to_user(readyfds, &res, sizeof(*readyfds)))
+	if (readyfds != NULL
+	    && s2e_copy_to_user(readyfds, &res, sizeof(*readyfds)))
 		return (-EFAULT);
 	return (0);
 }
 
-static int asmlinkage
-cgcos_allocate(unsigned long len, unsigned long exec, void __user **addr) {
+static int asmlinkage cgcos_allocate(unsigned long len, unsigned long exec,
+				     void __user **addr)
+{
 	unsigned int res;
 	int prot = PROT_READ | PROT_WRITE;
 
@@ -1753,7 +1747,8 @@ cgcos_allocate(unsigned long len, unsigned long exec, void __user **addr) {
 		return (-EFAULT);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_handle_symbolic_allocate_size(current->pid, current->comm, &len);
+		s2e_decree_handle_symbolic_allocate_size(current->pid,
+							 current->comm, &len);
 	}
 
 	res = vm_mmap(NULL, 0, len, prot, MAP_ANON | MAP_PRIVATE, 0);
@@ -1764,35 +1759,38 @@ cgcos_allocate(unsigned long len, unsigned long exec, void __user **addr) {
 		return (-EFAULT);
 	}
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+		s2e_decree_update_memory_map(current->pid, current->comm,
+					     current->mm);
 	}
 	return (0);
 }
 
-int asmlinkage
-cgcos_random(char __user * buf, size_t count, size_t __user *rnd_out) {
+int asmlinkage cgcos_random(char __user *buf, size_t count,
+			    size_t __user *rnd_out)
+{
 	size_t i, size;
-	uint32_t randval; 
+	uint32_t randval;
 	int ret;
 
 	current->cgc_bytes = 0;
-	if (rnd_out != NULL &&
-	    !access_ok(VERIFY_WRITE, rnd_out, sizeof(*rnd_out)))
+	if (rnd_out != NULL
+	    && !access_ok(VERIFY_WRITE, rnd_out, sizeof(*rnd_out)))
 		return (-EFAULT);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_handle_symbolic_random_buffer(current->pid, current->comm, &buf, &count);
+		s2e_decree_handle_symbolic_random_buffer(
+			current->pid, current->comm, (void **)&buf, &count);
 	}
 
 	for (i = 0; i < count; i += sizeof(randval)) {
-		size = min(count -i, sizeof(randval));
-		
+		size = min(count - i, sizeof(randval));
+
 		if (current->cgc_rng) {
 			ret = crypto_rng_get_bytes(current->cgc_rng,
 						   (u8 *)&randval, size);
 			if (ret < 0)
 				return (ret);
-		} else 
+		} else
 			get_random_bytes(&randval, size);
 		if (s2e_copy_to_user(&buf[i], &randval, size))
 			return (-EFAULT);
@@ -1800,47 +1798,50 @@ cgcos_random(char __user * buf, size_t count, size_t __user *rnd_out) {
 	}
 
 	if (s2e_decree_monitor_enabled) {
-		// either replace everything with symbolic data, or make values concolic
+		// either replace everything with symbolic data, or make values
+		// concolic
 		s2e_decree_random(current->pid, current->comm, buf, count);
 	}
 
-	if (rnd_out != NULL && s2e_copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
+	if (rnd_out != NULL
+	    && s2e_copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
 		return (-EFAULT);
 
 	return 0;
 }
 
-static int asmlinkage
-cgcos_deallocate(unsigned long ptr, size_t len) {
-	if ((ptr + len) <= CGC_MAGIC_PAGE ||
-	    ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE))
-	{
+static int asmlinkage cgcos_deallocate(unsigned long ptr, size_t len)
+{
+	if ((ptr + len) <= CGC_MAGIC_PAGE
+	    || ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE)) {
 		int res = vm_munmap(ptr, len);
 		if (res == 0 && s2e_decree_monitor_enabled) {
-			s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+			s2e_decree_update_memory_map(
+				current->pid, current->comm, current->mm);
 		}
 		return res;
 	}
 	return -EINVAL;
 }
 
-int asmlinkage
-cgcos_transmit(int fd, char __user * buf, size_t count,
-	       size_t __user *tx_bytes) {
+int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
+			      size_t __user *tx_bytes)
+{
 	int res = 0;
 	size_t count_orig;
 
 	current->cgc_bytes = 0;
-	if (tx_bytes != NULL &&
-	    !access_ok(VERIFY_WRITE, tx_bytes, sizeof(*tx_bytes)))
+	if (tx_bytes != NULL
+	    && !access_ok(VERIFY_WRITE, tx_bytes, sizeof(*tx_bytes)))
 		return (-EFAULT);
-    if (current->cgc_max_transmit != 0 && current->cgc_max_transmit < count)
-        count = current->cgc_max_transmit;
+	if (current->cgc_max_transmit != 0 && current->cgc_max_transmit < count)
+		count = current->cgc_max_transmit;
 
 	count_orig = count; // remember original symbolic size
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_handle_symbolic_transmit_buffer(current->pid, current->comm, &buf, &count);
+		s2e_decree_handle_symbolic_transmit_buffer(
+			current->pid, current->comm, (void **)&buf, &count);
 	}
 
 	if (count != 0) {
@@ -1851,31 +1852,34 @@ cgcos_transmit(int fd, char __user * buf, size_t count,
 
 		if (s2e_decree_monitor_enabled) {
 			// res becomes symbolic if count_orig was symbolic
-			s2e_decree_write_data(current->pid, current->comm, fd, buf, &res, &count_orig);
+			s2e_decree_write_data(current->pid, current->comm, fd,
+					      buf, &res, &count_orig);
 		}
 	}
 
 	current->cgc_bytes = res;
-	if (tx_bytes != NULL && s2e_copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
+	if (tx_bytes != NULL
+	    && s2e_copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
 		return (-EFAULT);
 	return (0);
 }
 
-int asmlinkage
-cgcos_receive(int fd, char __user * buf, size_t count,
-	      size_t __user *rx_bytes) {
+int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
+			     size_t __user *rx_bytes)
+{
 	int res = 0;
 	int invoke_orig = 1;
 
 	current->cgc_bytes = 0;
-	if (rx_bytes != NULL &&
-	    !access_ok(VERIFY_WRITE, rx_bytes, sizeof(*rx_bytes)))
+	if (rx_bytes != NULL
+	    && !access_ok(VERIFY_WRITE, rx_bytes, sizeof(*rx_bytes)))
 		return (-EFAULT);
-    if (current->cgc_max_receive != 0 && current->cgc_max_receive < count)
-        count = current->cgc_max_receive;
+	if (current->cgc_max_receive != 0 && current->cgc_max_receive < count)
+		count = current->cgc_max_receive;
 
 	if (s2e_decree_monitor_enabled) {
-		invoke_orig = s2e_get_cfg_bool(current->pid, current->comm, "invokeOriginalSyscalls");
+		invoke_orig = s2e_get_cfg_bool(current->pid, current->comm,
+					       "invokeOriginalSyscalls");
 	}
 
 	if (invoke_orig) {
@@ -1886,25 +1890,30 @@ cgcos_receive(int fd, char __user * buf, size_t count,
 			}
 
 			if (s2e_decree_monitor_enabled) {
-				s2e_decree_read_data_post(current->pid, current->comm, fd, buf, res);
+				s2e_decree_read_data_post(current->pid,
+							  current->comm, fd,
+							  buf, res);
 			}
 		}
 	} else {
 		size_t count_orig = count; // remember original symbolic size
 
-		s2e_decree_handle_symbolic_receive_buffer(current->pid, current->comm, &buf, &count);
+		s2e_decree_handle_symbolic_receive_buffer(
+			current->pid, current->comm, (void **)&buf, &count);
 
 		if (count != 0) {
 			void *kbuf;
 
 			kbuf = kmalloc(count, GFP_KERNEL);
 			if (!kbuf) {
-				s2e_message("Could not allocate memory for read\n");
+				s2e_message(
+					"Could not allocate memory for read\n");
 				return -EFAULT;
 			}
 
 			// res becomes symbolic if count_orig was symbolic
-			s2e_decree_read_data(current->pid, current->comm, fd, kbuf, count, &count_orig, &res);
+			s2e_decree_read_data(current->pid, current->comm, fd,
+					     kbuf, count, &count_orig, &res);
 
 			if (s2e_copy_to_user(buf, kbuf, count)) {
 				kfree(kbuf);
@@ -1916,34 +1925,36 @@ cgcos_receive(int fd, char __user * buf, size_t count,
 	}
 
 	current->cgc_bytes = res;
-	if (rx_bytes != NULL && s2e_copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
+	if (rx_bytes != NULL
+	    && s2e_copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
 		return (-EFAULT);
 	return (0);
 }
 
-int asmlinkage
-cgcos_terminate(int code) {
+int asmlinkage cgcos_terminate(int code)
+{
 	complete_and_exit(NULL, (code & 0xff) << 8);
 	return (0);
 }
 
 static const struct sysent cgcos_syscall_table[] = {
-   { NULL,             0,      "nosys",      ""      }, /* 0 */
-   { cgcos_terminate,  1,      "terminate",  "d"     }, /* 1 */
-   { cgcos_transmit,   4,      "transmit",   "dpdp"  }, /* 2 */
-   { cgcos_receive,    4,      "receive",    "dpdp"  }, /* 3 */
-   { cgcos_fdwait,     5,      "fdwait",     "dxxxp" }, /* 4 */
-   { cgcos_allocate,   3,      "allocate",   "xxp"   }, /* 5 */
-   { cgcos_deallocate, 2,      "deallocate", "xd"    }, /* 6 */
-   { cgcos_random,     3,      "random",     "xdp"   }, /* 7 */
+	{NULL, 0, "nosys", ""},			   /* 0 */
+	{cgcos_terminate, 1, "terminate", "d"},    /* 1 */
+	{cgcos_transmit, 4, "transmit", "dpdp"},   /* 2 */
+	{cgcos_receive, 4, "receive", "dpdp"},     /* 3 */
+	{cgcos_fdwait, 5, "fdwait", "dxxxp"},      /* 4 */
+	{cgcos_allocate, 3, "allocate", "xxp"},    /* 5 */
+	{cgcos_deallocate, 2, "deallocate", "xd"}, /* 6 */
+	{cgcos_random, 3, "random", "xdp"},	/* 7 */
 };
 
-unsigned int cgcos_get_personality(void) {
+unsigned int cgcos_get_personality(void)
+{
 	return current->personality;
 }
 
-void
-cgcos_syscall_dummy(int segment, struct pt_regs *regs) {
+void cgcos_syscall_dummy(int segment, struct pt_regs *regs)
+{
 	/*
 	 * this exists to appease the compiler, cgcos_syscall is called
 	 * directly from entry_32.S.
@@ -1951,15 +1962,14 @@ cgcos_syscall_dummy(int segment, struct pt_regs *regs) {
 	regs->eax = -ENOSYS;
 }
 
-#define	CGC_EBADF	1
-#define	CGC_EFAULT	2
-#define	CGC_EINVAL	3
-#define	CGC_ENOMEM	4
-#define	CGC_ENOSYS	5
-#define	CGC_EPIPE	6
+#define CGC_EBADF 1
+#define CGC_EFAULT 2
+#define CGC_EINVAL 3
+#define CGC_ENOMEM 4
+#define CGC_ENOSYS 5
+#define CGC_EPIPE 6
 
-unsigned long
-cgc_map_err(struct pt_regs *regs)
+unsigned long cgc_map_err(struct pt_regs *regs)
 {
 	switch (regs->eax) {
 	case 0:
@@ -1987,8 +1997,8 @@ cgc_map_err(struct pt_regs *regs)
 	return CGC_EINVAL;
 }
 
-void asmlinkage
-cgcos_sysenter(int segment, struct pt_regs *regs) {
+void asmlinkage cgcos_sysenter(int segment, struct pt_regs *regs)
+{
 	siginfo_t info;
 
 	info.si_signo = SIGILL;
@@ -1998,8 +2008,8 @@ cgcos_sysenter(int segment, struct pt_regs *regs) {
 	send_sig_info(SIGKILL, &info, current);
 }
 
-void asmlinkage
-cgcos_syscall(int segment, struct pt_regs *regs) {
+void asmlinkage cgcos_syscall(int segment, struct pt_regs *regs)
+{
 	unsigned int sysno = regs->orig_ax;
 
 #ifdef DEBUG_CGC
@@ -2012,8 +2022,8 @@ cgcos_syscall(int segment, struct pt_regs *regs) {
 	regs->eax = cgc_map_err(regs);
 }
 
-void
-cgcos_dispatch(struct pt_regs *regs, const struct sysent *ap) {
+void cgcos_dispatch(struct pt_regs *regs, const struct sysent *ap)
+{
 	int error;
 
 	switch (ap->se_nargs) {
@@ -2046,17 +2056,17 @@ cgcos_dispatch(struct pt_regs *regs, const struct sysent *ap) {
 }
 
 static struct exec_domain cgcos_exec_domain = {
-	name:		"CGCOS",
-	handler:	cgcos_syscall_dummy,
-	pers_low:	PER_CGCOS & PER_MASK,
-	pers_high:	PER_CGCOS & PER_MASK,
-	signal_map:	NULL,
-	signal_invmap:	NULL,
-	err_map:	NULL,
-	socktype_map:	NULL,
-	sockopt_map:	NULL,
-	af_map:		NULL,
-	module:		THIS_MODULE
+	name : "CGCOS",
+	handler : cgcos_syscall_dummy,
+	pers_low : PER_CGCOS &PER_MASK,
+	pers_high : PER_CGCOS &PER_MASK,
+	signal_map : NULL,
+	signal_invmap : NULL,
+	err_map : NULL,
+	socktype_map : NULL,
+	sockopt_map : NULL,
+	af_map : NULL,
+	module : THIS_MODULE
 };
 
 static struct ctl_table cgc_sys_table[] = {
@@ -2067,22 +2077,19 @@ static struct ctl_table cgc_sys_table[] = {
 		.mode = 0644,
 		.proc_handler = proc_dointvec,
 	},
-	{ }
-};
+	{}};
 
-static struct ctl_table cgc_root_table[] = {
-	{
-		.procname = "cgc",
-		.mode = 0555,
-		.child = cgc_sys_table,
-	},
-	{ }
-};
+static struct ctl_table cgc_root_table[] = {{
+						    .procname = "cgc",
+						    .mode = 0555,
+						    .child = cgc_sys_table,
+					    },
+					    {}};
 
 static struct ctl_table_header *cgc_sysctls;
 
-static int __init
-init_cgcos_binfmt(void) {
+static int __init init_cgcos_binfmt(void)
+{
 	int err;
 
 	cgc_sysctls = register_sysctl_table(cgc_root_table);
@@ -2093,8 +2100,8 @@ init_cgcos_binfmt(void) {
 	return (err);
 }
 
-static void __exit
-exit_cgcos_binfmt(void) {
+static void __exit exit_cgcos_binfmt(void)
+{
 	unregister_exec_domain(&cgcos_exec_domain);
 	unregister_binfmt(&cgcos_format);
 	unregister_sysctl_table(cgc_sysctls);
