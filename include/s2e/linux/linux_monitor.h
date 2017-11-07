@@ -109,4 +109,16 @@ static inline void s2e_linux_init(uint64_t page_offset, uint64_t current_task_ad
     s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
+static inline void s2e_linux_kernel_panic(const char *msg, unsigned msg_size)
+{
+    struct S2E_LINUXMON_COMMAND cmd = { 0 };
+    cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+    cmd.Command = LINUX_KERNEL_PANIC;
+    cmd.currentPid = -1;
+    cmd.Panic.message = (uintptr_t) msg;
+    cmd.Panic.message_size = msg_size;
+
+    s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
+}
+
 #endif
