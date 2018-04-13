@@ -10,7 +10,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
+ * The above copyright notice and this permission notice shall be included in
+ * all
  * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -29,24 +30,26 @@
 
 static int __init s2e_init(void)
 {
-    size_t task_struct_pid_offset = offsetof(struct task_struct, pid);
+	size_t task_struct_pid_offset = offsetof(struct task_struct, pid);
 
-    /* Check if the DecreeMonitor plugin is enabled */
-    if (boot_cpu_has(X86_FEATURE_S2E) && s2e_plugin_loaded("DecreeMonitor")) {
-        s2e_decree_monitor_enabled = 1;
-    }
+	/* Check if the DecreeMonitor plugin is enabled */
+	if (boot_cpu_has(X86_FEATURE_S2E)
+	    && s2e_plugin_loaded("DecreeMonitor")) {
+		s2e_decree_monitor_enabled = 1;
+	}
 
-    /* Send addresses and offsets to the DecreeMonitor plugin */
-    if (s2e_decree_monitor_enabled) {
-        s2e_decree_init(PAGE_OFFSET, __START_KERNEL, task_struct_pid_offset);
-    }
+	/* Send addresses and offsets to the DecreeMonitor plugin */
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_init(PAGE_OFFSET, __START_KERNEL,
+				task_struct_pid_offset);
+	}
 
-    return 0;
+	return 0;
 }
 
 static void __exit s2e_exit(void)
 {
-    /* Nothing to do here */
+	/* Nothing to do here */
 }
 
 module_init(s2e_init);
