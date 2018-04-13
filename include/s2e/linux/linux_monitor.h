@@ -94,19 +94,22 @@ static inline void s2e_linux_process_exit(pid_t pid, const char *name, uint64_t 
     s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_init(uint64_t page_offset, uint64_t current_task_address, uint64_t task_struct_pid_offset,
-                                  uint64_t task_struct_tgid_offset)
+static inline void s2e_linux_init(uint64_t page_offset, uint64_t start_kernel,
+				  uint64_t current_task_address,
+				  uint64_t task_struct_pid_offset,
+				  uint64_t task_struct_tgid_offset)
 {
-    struct S2E_LINUXMON_COMMAND cmd = { 0 };
-    cmd.version = S2E_LINUXMON_COMMAND_VERSION;
-    cmd.Command = LINUX_INIT;
-    cmd.currentPid = -1;
-    cmd.Init.page_offset = page_offset;
-    cmd.Init.current_task_address = current_task_address;
-    cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
-    cmd.Init.task_struct_tgid_offset = task_struct_tgid_offset;
+	struct S2E_LINUXMON_COMMAND cmd = {0};
+	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	cmd.Command = LINUX_INIT;
+	cmd.currentPid = -1;
+	cmd.Init.page_offset = page_offset;
+	cmd.Init.start_kernel = start_kernel;
+	cmd.Init.current_task_address = current_task_address;
+	cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
+	cmd.Init.task_struct_tgid_offset = task_struct_tgid_offset;
 
-    s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
+	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
 static inline void s2e_linux_kernel_panic(const char *msg, unsigned msg_size)

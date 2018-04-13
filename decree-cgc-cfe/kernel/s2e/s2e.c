@@ -38,7 +38,7 @@ static int __init s2e_init(void)
 
     /* Send addresses and offsets to the DecreeMonitor plugin */
     if (s2e_decree_monitor_enabled) {
-        s2e_decree_init(PAGE_OFFSET, task_struct_pid_offset);
+        s2e_decree_init(PAGE_OFFSET, __START_KERNEL, task_struct_pid_offset);
     }
 
     return 0;

@@ -353,19 +353,21 @@ static inline void s2e_decree_do_set_args(pid_t pid, const char *name, struct S2
     }
 }
 
-static inline void s2e_decree_init(uint64_t page_offset, uint64_t task_struct_pid_offset)
+static inline void s2e_decree_init(uint64_t page_offset, uint64_t start_kernel,
+				   uint64_t task_struct_pid_offset)
 {
-    if (s2e_decree_monitor_enabled) {
-        struct S2E_DECREEMON_COMMAND cmd = { 0 };
+	if (s2e_decree_monitor_enabled) {
+		struct S2E_DECREEMON_COMMAND cmd = {0};
 
-        cmd.Command = DECREE_INIT;
-        cmd.version = S2E_DECREEMON_COMMAND_VERSION;
-        cmd.currentPid = -1;
-        cmd.Init.page_offset = page_offset;
-        cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
+		cmd.Command = DECREE_INIT;
+		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		cmd.currentPid = -1;
+		cmd.Init.page_offset = page_offset;
+		cmd.Init.start_kernel = start_kernel;
+		cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
 
-        s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
-    }
+		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
+	}
 }
 
 static inline void s2e_decree_kernel_panic(const char *msg, unsigned msg_size)

@@ -46,8 +46,8 @@ static int __init s2e_init(void)
 
 	/* Send addresses and offsets to the LinuxMonitor plugin */
 	if (s2e_linux_monitor_enabled) {
-		s2e_linux_init(PAGE_OFFSET, current_task_addr, task_struct_pid_offset,
-					   task_struct_tgid_offset);
+                s2e_linux_init(PAGE_OFFSET, __START_KERNEL, current_task_addr,
+                               task_struct_pid_offset, task_struct_tgid_offset);
 	}
 
 	return 0;

@@ -182,8 +182,9 @@ struct S2E_DECREEMON_VMA {
 } __attribute__((packed));
 
 struct S2E_DECREEMON_COMMAND_INIT {
-    uint64_t page_offset;
-    uint64_t task_struct_pid_offset;
+	uint64_t page_offset;
+	uint64_t start_kernel;
+	uint64_t task_struct_pid_offset;
 } __attribute__((packed));
 
 struct S2E_DECREEMON_COMMAND_KERNEL_PANIC {
