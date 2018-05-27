@@ -5,25 +5,21 @@
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to
-/// deal
-/// in the Software without restriction, including without limitation the rights
+/// deal in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
 ///
 /// The above copyright notice and this permission notice shall be included in
-/// all
-/// copies or substantial portions of the Software.
+/// all copies or substantial portions of the Software.
 ///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-/// FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE
-/// SOFTWARE.
+/// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
 
 #ifndef S2E_DECREE_MONITOR_H
 #define S2E_DECREE_MONITOR_H
@@ -38,10 +34,8 @@
 /* This is declared in kernel/s2e/vars.c */
 extern char s2e_decree_monitor_enabled;
 
-static inline void s2e_decree_process_load(pid_t pid, const char *name,
-					   const struct task_struct *t,
-					   const void *hdr, size_t hdr_size,
-					   const char *path, uintptr_t entry)
+static inline void s2e_decree_process_load(pid_t pid, const char *name, const struct task_struct *t, const void *hdr,
+					   size_t hdr_size, const char *path, uintptr_t entry)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -57,16 +51,14 @@ static inline void s2e_decree_process_load(pid_t pid, const char *name,
 		cmd.ProcessLoad.start_stack = t->mm->start_stack;
 		cmd.ProcessLoad.process_id = t->pid;
 		cmd.ProcessLoad.entry_point = entry;
-		strncpy(cmd.ProcessLoad.process_path, path,
-			sizeof(cmd.ProcessLoad.process_path));
+		strncpy(cmd.ProcessLoad.process_path, path, sizeof(cmd.ProcessLoad.process_path));
 
 		__s2e_touch_buffer(hdr, hdr_size);
 		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 	}
 }
 
-static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc,
-				       uint64_t address, uint64_t fault)
+static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc, uint64_t address, uint64_t fault)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -82,8 +74,7 @@ static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc,
 	}
 }
 
-static inline void s2e_decree_write_data(pid_t pid, const char *name, int fd,
-					 const void *buf, size_t *buf_size,
+static inline void s2e_decree_write_data(pid_t pid, const char *name, int fd, const void *buf, size_t *buf_size,
 					 size_t *size_expr)
 {
 	if (s2e_decree_monitor_enabled) {
@@ -104,8 +95,7 @@ static inline void s2e_decree_write_data(pid_t pid, const char *name, int fd,
 	}
 }
 
-static inline void s2e_decree_read_data(pid_t pid, const char *name, int fd,
-					const void *buf, size_t buf_size,
+static inline void s2e_decree_read_data(pid_t pid, const char *name, int fd, const void *buf, size_t buf_size,
 					size_t *size_expr, size_t *res)
 {
 	if (s2e_decree_monitor_enabled) {
@@ -127,9 +117,7 @@ static inline void s2e_decree_read_data(pid_t pid, const char *name, int fd,
 	}
 }
 
-static inline void s2e_decree_read_data_post(pid_t pid, const char *name,
-					     int fd, const void *buf,
-					     size_t buf_size)
+static inline void s2e_decree_read_data_post(pid_t pid, const char *name, int fd, const void *buf, size_t buf_size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -146,8 +134,7 @@ static inline void s2e_decree_read_data_post(pid_t pid, const char *name,
 	}
 }
 
-static inline int s2e_decree_waitfds(pid_t pid, const char *name, int nfds,
-				     int has_timeout, uint64_t tv_sec,
+static inline int s2e_decree_waitfds(pid_t pid, const char *name, int nfds, int has_timeout, uint64_t tv_sec,
 				     uint64_t tv_nsec, int *invoke_orig)
 {
 	if (s2e_decree_monitor_enabled) {
@@ -173,8 +160,7 @@ static inline int s2e_decree_waitfds(pid_t pid, const char *name, int nfds,
 	}
 }
 
-static inline void s2e_decree_random(pid_t pid, const char *name, void *buf,
-				     size_t buf_size)
+static inline void s2e_decree_random(pid_t pid, const char *name, void *buf, size_t buf_size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -209,9 +195,7 @@ static inline int s2e_get_cfg_bool(pid_t pid, const char *name, char *key)
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_allocate_size(pid_t pid,
-							    const char *name,
-							    unsigned long *size)
+static inline void s2e_decree_handle_symbolic_allocate_size(pid_t pid, const char *name, unsigned long *size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -226,10 +210,7 @@ static inline void s2e_decree_handle_symbolic_allocate_size(pid_t pid,
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_transmit_buffer(pid_t pid,
-							      const char *name,
-							      void **buf,
-							      size_t *size)
+static inline void s2e_decree_handle_symbolic_transmit_buffer(pid_t pid, const char *name, void **buf, size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -246,10 +227,7 @@ static inline void s2e_decree_handle_symbolic_transmit_buffer(pid_t pid,
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_receive_buffer(pid_t pid,
-							     const char *name,
-							     void **buf,
-							     size_t *size)
+static inline void s2e_decree_handle_symbolic_receive_buffer(pid_t pid, const char *name, void **buf, size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -266,10 +244,7 @@ static inline void s2e_decree_handle_symbolic_receive_buffer(pid_t pid,
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_random_buffer(pid_t pid,
-							    const char *name,
-							    void **buf,
-							    size_t *size)
+static inline void s2e_decree_handle_symbolic_random_buffer(pid_t pid, const char *name, void **buf, size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -286,9 +261,8 @@ static inline void s2e_decree_handle_symbolic_random_buffer(pid_t pid,
 	}
 }
 
-static inline void s2e_decree_copy_to_user(pid_t pid, const char *name,
-					   void *to, const void *from, long n,
-					   int done, long ret)
+static inline void s2e_decree_copy_to_user(pid_t pid, const char *name, void *to, const void *from, long n, int done,
+					   long ret)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -325,8 +299,7 @@ static inline uint64_t s2e_vm_flags(unsigned long vm_flags)
 	return f;
 }
 
-static inline void s2e_decree_update_memory_map(pid_t pid, const char *name,
-						struct mm_struct *mm)
+static inline void s2e_decree_update_memory_map(pid_t pid, const char *name, struct mm_struct *mm)
 {
 	if (s2e_decree_monitor_enabled) {
 		int vm_count, i;
@@ -341,17 +314,14 @@ static inline void s2e_decree_update_memory_map(pid_t pid, const char *name,
 		}
 		up_read(&mm->mmap_sem);
 
-		data = kmalloc(vm_count * sizeof(struct S2E_DECREEMON_VMA),
-			       GFP_KERNEL);
+		data = kmalloc(vm_count * sizeof(struct S2E_DECREEMON_VMA), GFP_KERNEL);
 		if (!data) {
-			s2e_message(
-				"Could not allocate memory for memory map\n");
+			s2e_message("Could not allocate memory for memory map\n");
 			return;
 		}
 
 		down_read(&mm->mmap_sem);
-		for (vma = mm->mmap, i = 0; vma != NULL;
-		     vma = vma->vm_next, i++) {
+		for (vma = mm->mmap, i = 0; vma != NULL; vma = vma->vm_next, i++) {
 			data[i].start = vma->vm_start;
 			data[i].end = vma->vm_end;
 			data[i].flags = s2e_vm_flags(vma->vm_flags);
@@ -365,17 +335,15 @@ static inline void s2e_decree_update_memory_map(pid_t pid, const char *name,
 		cmd.UpdateMemoryMap.count = vm_count;
 		cmd.UpdateMemoryMap.buffer = (uintptr_t)data;
 
-		__s2e_touch_buffer(data,
-				   vm_count * sizeof(struct S2E_DECREEMON_VMA));
+		__s2e_touch_buffer(data, vm_count * sizeof(struct S2E_DECREEMON_VMA));
 		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 
 		kfree(data);
 	}
 }
 
-static inline void
-s2e_decree_do_set_args(pid_t pid, const char *name,
-		       struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS *params)
+static inline void s2e_decree_do_set_args(pid_t pid, const char *name,
+					  struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS *params)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};
@@ -393,8 +361,7 @@ s2e_decree_do_set_args(pid_t pid, const char *name,
 	}
 }
 
-static inline void s2e_decree_init(uint64_t page_offset, uint64_t start_kernel,
-				   uint64_t task_struct_pid_offset)
+static inline void s2e_decree_init(uint64_t page_offset, uint64_t start_kernel, uint64_t task_struct_pid_offset)
 {
 	if (s2e_decree_monitor_enabled) {
 		struct S2E_DECREEMON_COMMAND cmd = {0};

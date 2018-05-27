@@ -41,15 +41,14 @@ static int __init s2e_init(void)
 	}
 
 	/* Check if the LinuxMonitor plugin is enabled */
-	if (boot_cpu_has(X86_FEATURE_S2E)
-	    && s2e_plugin_loaded("LinuxMonitor")) {
+	if (boot_cpu_has(X86_FEATURE_S2E) && s2e_plugin_loaded("LinuxMonitor")) {
 		s2e_linux_monitor_enabled = 1;
 	}
 
 	/* Send addresses and offsets to the LinuxMonitor plugin */
 	if (s2e_linux_monitor_enabled) {
-		s2e_linux_init(PAGE_OFFSET, __START_KERNEL, current_task_addr,
-			       task_struct_pid_offset, task_struct_tgid_offset);
+		s2e_linux_init(PAGE_OFFSET, __START_KERNEL, current_task_addr, task_struct_pid_offset,
+			       task_struct_tgid_offset);
 	}
 
 	return 0;
