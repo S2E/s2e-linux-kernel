@@ -15,6 +15,10 @@
 #include <asm/sections.h>
 #include <asm/uaccess.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #include "internal.h"
 
 static inline int is_kernel_rodata(unsigned long addr)
@@ -308,6 +312,13 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 		if (populate)
 			mm_populate(ret, populate);
 	}
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled && (ret != -1)) {
+		s2e_linux_mmap(current->pid, ret, len, prot, flag, pgoff);
+	}
+#endif
+
 	return ret;
 }
 
