@@ -9,3 +9,9 @@ tmp-output
 output
 *.deb
 *.swp
+
+# qtcreator files
+linux.config
+linux.creator
+linux.includes
+linux.files

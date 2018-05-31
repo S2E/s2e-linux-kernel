@@ -4,25 +4,21 @@
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to
-/// deal
-/// in the Software without restriction, including without limitation the rights
+/// deal in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
 ///
 /// The above copyright notice and this permission notice shall be included in
-/// all
-/// copies or substantial portions of the Software.
+/// all copies or substantial portions of the Software.
 ///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-/// FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE
-/// SOFTWARE.
+/// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
 
 #ifndef S2E_LINUX_COMMANDS_H
 #define S2E_LINUX_COMMANDS_H
@@ -31,7 +27,7 @@
 extern "C" {
 #endif
 
-#define S2E_LINUXMON_COMMAND_VERSION 0x201711041408ULL // date +%Y%m%d%H%M
+#define S2E_LINUXMON_COMMAND_VERSION 0x201805271439ULL // date +%Y%m%d%H%M
 
 enum S2E_LINUXMON_COMMANDS {
 	LINUX_SEGFAULT,
@@ -40,28 +36,46 @@ enum S2E_LINUXMON_COMMANDS {
 	LINUX_TRAP,
 	LINUX_PROCESS_EXIT,
 	LINUX_INIT,
-	LINUX_KERNEL_PANIC
+	LINUX_KERNEL_PANIC,
+	LINUX_MEMORY_MAP,
+	LINUX_MEMORY_UNMAP,
+	LINUX_MEMORY_PROTECT
 };
 
+struct S2E_LINUXMON_COMMAND_MEMORY_MAP {
+	uint64_t address;
+	uint64_t size;
+	uint64_t prot;
+	uint64_t flag;
+	uint64_t pgoff;
+} __attribute__((packed));
+
+struct S2E_LINUXMON_COMMAND_MEMORY_UNMAP {
+	uint64_t start;
+	uint64_t end;
+} __attribute__((packed));
+
+struct S2E_LINUXMON_COMMAND_MEMORY_PROTECT {
+	uint64_t start;
+	uint64_t size;
+	uint64_t prot;
+} __attribute__((packed));
+
 struct S2E_LINUXMON_COMMAND_PROCESS_LOAD {
-	uint64_t process_id;
-	uint64_t entry_point;
-	uint64_t start_code;
-	uint64_t end_code;
-	uint64_t start_data;
-	uint64_t end_data;
-	uint64_t start_stack;
-	char process_path[128]; // not NULL terminated
+	// Zero-terminated path to process
+	uint64_t process_path;
 } __attribute__((packed));
 
 struct S2E_LINUXMON_COMMAND_MODULE_LOAD {
+	uint64_t module_path;
 	uint64_t load_base;
 	uint64_t size;
+	uint64_t entry_point;
+
 	uint64_t start_code;
 	uint64_t end_code;
 	uint64_t start_data;
 	uint64_t end_data;
-	char module_path[128]; // not NULL terminated
 } __attribute__((packed));
 
 struct S2E_LINUXMON_COMMAND_SEG_FAULT {
@@ -106,8 +120,10 @@ struct S2E_LINUXMON_COMMAND {
 		struct S2E_LINUXMON_COMMAND_PROCESS_EXIT ProcessExit;
 		struct S2E_LINUXMON_COMMAND_INIT Init;
 		struct S2E_LINUXMON_COMMAND_KERNEL_PANIC Panic;
+		struct S2E_LINUXMON_COMMAND_MEMORY_MAP MemMap;
+		struct S2E_LINUXMON_COMMAND_MEMORY_UNMAP MemUnmap;
+		struct S2E_LINUXMON_COMMAND_MEMORY_PROTECT MemProtect;
 	};
-	char currentName[32]; // not NULL terminated
 } __attribute__((packed));
 
 #ifdef __cplusplus

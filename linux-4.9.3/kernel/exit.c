@@ -895,7 +895,7 @@ void __noreturn do_exit(long code)
 			tsk->comm,
 			tsk->exit_code);
 #endif
-		s2e_linux_process_exit(tsk->pid, tsk->comm, tsk->exit_code);
+		s2e_linux_process_exit(tsk->pid, tsk->exit_code);
 	}
 #endif
 

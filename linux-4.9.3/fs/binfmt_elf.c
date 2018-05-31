@@ -680,7 +680,7 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	struct elf_phdr *elf_ppnt, *elf_phdata, *interp_elf_phdata = NULL;
 	unsigned long elf_bss, elf_brk;
 	int retval, i;
-	unsigned long elf_entry;
+	unsigned long elf_entry = 0;
 	unsigned long interp_load_addr = 0;
 	unsigned long start_code, end_code, start_data, end_data;
 	unsigned long reloc_func_desc __maybe_unused = 0;
@@ -692,7 +692,13 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	} *loc;
 	struct arch_elf_state arch_state = INIT_ARCH_ELF_STATE;
 
-	loc = kmalloc(sizeof(*loc), GFP_KERNEL);
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+		s2e_linux_process_load(current->pid, bprm->interp);
+	}
+#endif
+
+    loc = kmalloc(sizeof(*loc), GFP_KERNEL);
 	if (!loc) {
 		retval = -ENOMEM;
 		goto out_ret;
@@ -1030,6 +1036,16 @@ static int load_elf_binary(struct linux_binprm *bprm)
 
 		allow_write_access(interpreter);
 		fput(interpreter);
+
+#ifdef CONFIG_S2E
+		if (s2e_linux_monitor_enabled) {
+			s2e_printf("elf_interpreter=%s interp_map_addr=%lx elf_entry=%#lx interp_elf_phdata=%p interp_load_addr=%#lx "
+				   , elf_interpreter, interp_map_addr, elf_entry, interp_elf_phdata,
+				   interp_load_addr);
+			s2e_linux_module_load(current->pid, elf_interpreter, interp_map_addr, 0, elf_entry);
+		}
+#endif
+
 		kfree(elf_interpreter);
 	} else {
 		elf_entry = loc->elf_ex.e_entry;
@@ -1095,20 +1111,15 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	start_thread(regs, elf_entry, bprm->p);
 	retval = 0;
 out:
-	kfree(loc);
-out_ret:
 #ifdef CONFIG_S2E
-	if (s2e_linux_monitor_enabled) {
-#ifdef CONFIG_DEBUG_S2E
-		s2e_printf("detected ELF load %s\n", bprm->interp);
-#endif
-		s2e_linux_process_load(current->pid,
-			current->comm,
-			current,
-			bprm->interp,
-			elf_entry);
+	if (s2e_linux_monitor_enabled && !retval) {
+		s2e_linux_module_load(current->pid, bprm->interp, start_code,
+		0, loc->elf_ex.e_entry);
 	}
 #endif
+
+	kfree(loc);
+out_ret:
 
 	return retval;
 
