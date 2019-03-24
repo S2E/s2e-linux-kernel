@@ -44,8 +44,8 @@ static inline void s2e_linux_process_load(pid_t pid, const char *path)
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_module_load(uint64_t pid, const char *path, uint64_t load_base, uint64_t size,
-					 uint64_t entry_point)
+static inline void s2e_linux_module_load(const char *path, uint64_t pid, uint64_t entry_point,
+					 const struct S2E_LINUXMON_PHDR_DESC *phdr, size_t phdr_size)
 {
 	struct S2E_LINUXMON_COMMAND cmd = {0};
 	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
@@ -53,9 +53,9 @@ static inline void s2e_linux_module_load(uint64_t pid, const char *path, uint64_
 	cmd.currentPid = pid;
 
 	cmd.ModuleLoad.module_path = path;
-	cmd.ModuleLoad.load_base = load_base;
-	cmd.ModuleLoad.size = size;
 	cmd.ModuleLoad.entry_point = entry_point;
+	cmd.ModuleLoad.phdr = (uintptr_t)phdr;
+	cmd.ModuleLoad.phdr_size = phdr_size;
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
