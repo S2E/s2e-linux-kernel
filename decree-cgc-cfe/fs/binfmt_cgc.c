@@ -171,7 +171,9 @@ static struct linux_binfmt cgcos_format = {
 
 #define BAD_ADDR(x) ((unsigned long)(x) >= TASK_SIZE)
 
-static unsigned long cgc_map(struct file *, struct CGC32_phdr *, int, int);
+static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
+			     int prot, int type,
+			     struct S2E_LINUXMON_COMMAND_MEMORY_MAP *mmap_desc);
 static int set_brk(unsigned long, unsigned long);
 static int padzero(unsigned long);
 static unsigned long vma_dump_size(struct vm_area_struct *, unsigned long);
@@ -230,11 +232,17 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 	struct CGC32_hdr hdr;
 	int ret = -ENOEXEC, i;
 	struct CGC32_phdr *phdrs = NULL;
+	struct S2E_LINUXMON_PHDR_DESC *elf_phdr = NULL;
+	size_t elf_phdr_size;
 	unsigned long start_code, end_code, start_data, end_data;
 	unsigned int sz;
 	struct pt_regs *regs = current_pt_regs();
 	unsigned long bss, brk;
 	struct cgc_params pars;
+
+	if (s2e_decree_monitor_enabled) {
+		s2e_decree_process_load(current->pid, bprm->interp);
+	}
 
 	memset(&pars, 0, sizeof(pars));
 
@@ -265,6 +273,15 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 		ret = -ENOMEM;
 		goto out;
 	}
+
+	elf_phdr_size = sizeof(*elf_phdr) * hdr.c_phnum;
+	elf_phdr = kmalloc(elf_phdr_size, GFP_KERNEL);
+	if (!elf_phdr) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memset(elf_phdr, 0, elf_phdr_size);
 
 	ret = kernel_read(bprm->file, hdr.c_phoff, (char *)phdrs, sz);
 	if (ret != sz) {
@@ -315,8 +332,21 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 
 	for (i = 0; i < hdr.c_phnum; i++) {
 		struct CGC32_phdr *phdr = &phdrs[i];
+
 		int prot, flags;
 		unsigned long k;
+
+		struct S2E_LINUXMON_PHDR_DESC *s2e_ppnt = &elf_phdr[i];
+		s2e_ppnt->index = i;
+		s2e_ppnt->vma = 0;
+		s2e_ppnt->p_type = phdr->p_type;
+		s2e_ppnt->p_offset = phdr->p_offset;
+		s2e_ppnt->p_vaddr = phdr->p_vaddr;
+		s2e_ppnt->p_paddr = phdr->p_paddr;
+		s2e_ppnt->p_filesz = phdr->p_filesz;
+		s2e_ppnt->p_memsz = phdr->p_memsz;
+		s2e_ppnt->p_flags = phdr->p_flags;
+		s2e_ppnt->p_align = phdr->p_align;
 
 		switch (phdr->p_type) {
 		case PT_NULL:
@@ -370,11 +400,13 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 			goto out_kill;
 		}
 
-		k = cgc_map(bprm->file, phdr, prot, flags);
+		k = cgc_map(bprm->file, phdr, prot, flags, &s2e_ppnt->mmap);
 		if (BAD_ADDR(k)) {
 			ret = IS_ERR((void *)k) ? PTR_ERR((void *)k) : -EINVAL;
 			goto out_kill;
 		}
+
+		s2e_ppnt->vma = k;
 
 		k = phdr->p_vaddr + phdr->p_filesz;
 		if (k > bss)
@@ -528,21 +560,17 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 	regs->fs = __USER_DS;
 	ret = 0;
 out:
-	if (phdrs)
-		kfree(phdrs);
-
-	if (s2e_decree_monitor_enabled) {
-		s2e_printf("binfmt_cgc: detected process load %s ret=%d\n",
-			   bprm->interp, ret);
-	}
-
 	if (ret == 0 && s2e_decree_monitor_enabled) {
-		s2e_decree_process_load(current->pid, current->comm, current,
-					&hdr, sizeof(hdr), bprm->interp,
-					hdr.c_entry);
+		s2e_decree_module_load(bprm->interp, current->pid, hdr.c_entry,
+				       elf_phdr, elf_phdr_size);
 		s2e_decree_update_memory_map(current->pid, current->comm,
 					     current->mm);
 	}
+	if (phdrs)
+		kfree(phdrs);
+
+	if (elf_phdr)
+		kfree(elf_phdr);
 
 	return (ret);
 
@@ -787,19 +815,23 @@ static int set_brk(unsigned long start, unsigned long end)
 }
 
 static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
-			     int prot, int type)
+			     int prot, int type,
+			     struct S2E_LINUXMON_COMMAND_MEMORY_MAP *mmap_desc)
 {
 	unsigned long addr, zaddr;
 	unsigned long lo, hi;
+	unsigned long off = 0;
+	unsigned long size = 0;
 
 	if (phdr->p_filesz == 0 && phdr->p_memsz == 0)
 		return 0;
 	if (phdr->p_filesz > 0) {
+		off = CGC_PAGESTART(phdr->p_offset);
+		size = CGC_PAGEALIGN(phdr->p_filesz +
+				     CGC_PAGEOFFSET(phdr->p_vaddr));
 		/* map in the part of the binary corresponding to filesz */
-		addr = vm_mmap(filep, CGC_PAGESTART(phdr->p_vaddr),
-			       CGC_PAGEALIGN(phdr->p_filesz +
-					     CGC_PAGEOFFSET(phdr->p_vaddr)),
-			       prot, type, CGC_PAGESTART(phdr->p_offset));
+		addr = vm_mmap(filep, CGC_PAGESTART(phdr->p_vaddr), size, prot,
+			       type, off);
 		if (BAD_ADDR(addr))
 			return (addr);
 		lo = CGC_PAGEALIGN(phdr->p_vaddr + phdr->p_filesz);
@@ -812,8 +844,10 @@ static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
 
 	/* map anon pages for the rest (no prefault) */
 	if ((hi - lo) > 0) {
-		zaddr = vm_mmap(NULL, lo, hi - lo, prot, type | MAP_ANONYMOUS,
-				0UL);
+		off = 0;
+		size = hi - lo;
+		zaddr = vm_mmap(NULL, lo, size, prot, type | MAP_ANONYMOUS,
+				off);
 		if (BAD_ADDR(zaddr))
 			return (zaddr);
 	}
@@ -829,6 +863,13 @@ static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
 			 */
 		}
 	}
+
+	mmap_desc->address = addr;
+	mmap_desc->size = size;
+	mmap_desc->prot = prot;
+	mmap_desc->flag = type;
+	mmap_desc->pgoff = off;
+
 	return (addr);
 }
 
