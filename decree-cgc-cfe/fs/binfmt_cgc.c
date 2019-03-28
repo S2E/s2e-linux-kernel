@@ -16,42 +16,42 @@
  * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
  */
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/fs.h>
-#include <linux/mm.h>
-#include <linux/mman.h>
-#include <linux/errno.h>
-#include <linux/signal.h>
-#include <linux/binfmts.h>
-#include <linux/string.h>
-#include <linux/file.h>
-#include <linux/slab.h>
-#include <linux/personality.h>
-#include <linux/elfcore.h>
-#include <linux/init.h>
-#include <linux/highuid.h>
-#include <linux/compiler.h>
-#include <linux/highmem.h>
-#include <linux/pagemap.h>
-#include <linux/vmalloc.h>
-#include <linux/security.h>
-#include <linux/random.h>
-#include <linux/elf.h>
-#include <linux/utsname.h>
-#include <linux/coredump.h>
-#include <linux/sched.h>
-#include <linux/ptrace.h>
-#include <asm/uaccess.h>
-#include <asm/param.h>
 #include <asm/page.h>
-#include <linux/syscalls.h>
-#include <linux/regset.h>
+#include <asm/param.h>
+#include <asm/uaccess.h>
 #include <crypto/algapi.h>
 #include <crypto/rng.h>
+#include <linux/binfmts.h>
+#include <linux/compiler.h>
+#include <linux/coredump.h>
+#include <linux/elf.h>
+#include <linux/elfcore.h>
+#include <linux/errno.h>
+#include <linux/file.h>
+#include <linux/fs.h>
+#include <linux/highmem.h>
+#include <linux/highuid.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/mm.h>
+#include <linux/mman.h>
+#include <linux/module.h>
+#include <linux/pagemap.h>
+#include <linux/personality.h>
+#include <linux/ptrace.h>
+#include <linux/random.h>
+#include <linux/regset.h>
+#include <linux/sched.h>
+#include <linux/security.h>
+#include <linux/signal.h>
+#include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/syscalls.h>
+#include <linux/utsname.h>
+#include <linux/vmalloc.h>
 
-#include <s2e/s2e.h>
 #include <s2e/decree/decree_monitor.h>
+#include <s2e/s2e.h>
 
 #ifndef user_long_t
 #define user_long_t long
@@ -248,13 +248,12 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 	} else
 		memcpy(&hdr, bprm->buf, sizeof(hdr));
 
-	if (hdr.ci_mag0 != 0x7f || hdr.ci_mag1 != 'C' || hdr.ci_mag2 != 'G'
-	    || hdr.ci_mag3 != 'C' || hdr.ci_class != 1 || hdr.ci_data != 1
-	    || hdr.ci_version != 1 || hdr.ci_osabi != 'C' || hdr.ci_abivers != 1
-	    || hdr.c_type != 2 || hdr.c_machine != 3 || hdr.c_version != 1
-	    || hdr.c_flags != 0 || hdr.c_phentsize != sizeof(struct CGC32_phdr)
-	    || hdr.c_phnum < 1
-	    || hdr.c_phnum > 65536U / sizeof(struct CGC32_phdr))
+	if (hdr.ci_mag0 != 0x7f || hdr.ci_mag1 != 'C' || hdr.ci_mag2 != 'G' ||
+	    hdr.ci_mag3 != 'C' || hdr.ci_class != 1 || hdr.ci_data != 1 ||
+	    hdr.ci_version != 1 || hdr.ci_osabi != 'C' || hdr.ci_abivers != 1 ||
+	    hdr.c_type != 2 || hdr.c_machine != 3 || hdr.c_version != 1 ||
+	    hdr.c_flags != 0 || hdr.c_phentsize != sizeof(struct CGC32_phdr) ||
+	    hdr.c_phnum < 1 || hdr.c_phnum > 65536U / sizeof(struct CGC32_phdr))
 		goto out;
 
 	if (!bprm->file->f_op->mmap)
@@ -363,9 +362,9 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 		 * allowed task size. Note that p_filesz must always be
 		 * <= p_memsz so it is only necessary to check p_memsz.
 		 */
-		if (BAD_ADDR(phdr->p_vaddr) || phdr->p_filesz > phdr->p_memsz
-		    || phdr->p_memsz > TASK_SIZE
-		    || TASK_SIZE - phdr->p_memsz < phdr->p_vaddr) {
+		if (BAD_ADDR(phdr->p_vaddr) || phdr->p_filesz > phdr->p_memsz ||
+		    phdr->p_memsz > TASK_SIZE ||
+		    TASK_SIZE - phdr->p_memsz < phdr->p_vaddr) {
 			/* set_brk can never work. avoid overflows. */
 			ret = -EINVAL;
 			goto out_kill;
@@ -798,8 +797,8 @@ static unsigned long cgc_map(struct file *filep, struct CGC32_phdr *phdr,
 	if (phdr->p_filesz > 0) {
 		/* map in the part of the binary corresponding to filesz */
 		addr = vm_mmap(filep, CGC_PAGESTART(phdr->p_vaddr),
-			       CGC_PAGEALIGN(phdr->p_filesz
-					     + CGC_PAGEOFFSET(phdr->p_vaddr)),
+			       CGC_PAGEALIGN(phdr->p_filesz +
+					     CGC_PAGEOFFSET(phdr->p_vaddr)),
 			       prot, type, CGC_PAGESTART(phdr->p_offset));
 		if (BAD_ADDR(addr))
 			return (addr);
@@ -1198,8 +1197,8 @@ static int fill_thread_core_info(struct elf_thread_core_info *t,
 	for (i = 1; i < view->n; ++i) {
 		const struct user_regset *regset = &view->regsets[i];
 		do_thread_regset_writeback(t->task, regset);
-		if (regset->core_note_type && regset->get
-		    && (!regset->active || regset->active(t->task, regset))) {
+		if (regset->core_note_type && regset->get &&
+		    (!regset->active || regset->active(t->task, regset))) {
 			int ret;
 			size_t size = regset->n * regset->size;
 			void *data = kmalloc(size, GFP_KERNEL);
@@ -1260,8 +1259,8 @@ static int fill_note_info(struct elfhdr *elf, int phdrs,
 	 * Sanity check.  We rely on regset 0 being in NT_PRSTATUS,
 	 * since it is our one special case.
 	 */
-	if (unlikely(info->thread_notes == 0)
-	    || unlikely(view->regsets[0].core_note_type != NT_PRSTATUS)) {
+	if (unlikely(info->thread_notes == 0) ||
+	    unlikely(view->regsets[0].core_note_type != NT_PRSTATUS)) {
 		WARN_ON(1);
 		return 0;
 	}
@@ -1328,10 +1327,9 @@ static int writenote(struct memelfnote *men, struct coredump_params *cprm)
 	en.n_descsz = men->datasz;
 	en.n_type = men->type;
 
-	return dump_emit(cprm, &en, sizeof(en))
-	       && dump_emit(cprm, men->name, en.n_namesz) && dump_align(cprm, 4)
-	       && dump_emit(cprm, men->data, men->datasz)
-	       && dump_align(cprm, 4);
+	return dump_emit(cprm, &en, sizeof(en)) &&
+	       dump_emit(cprm, men->name, en.n_namesz) && dump_align(cprm, 4) &&
+	       dump_emit(cprm, men->data, men->datasz) && dump_align(cprm, 4);
 }
 
 static void fill_elf_header(struct elfhdr *elf, int segs, u16 machine,
@@ -1530,8 +1528,8 @@ static unsigned long vma_dump_size(struct vm_area_struct *vma,
 	 * check for an ELF header.  If we find one, dump the first page to
 	 * aid in determining what was mapped here.
 	 */
-	if (FILTER(ELF_HEADERS) && vma->vm_pgoff == 0
-	    && (vma->vm_flags & VM_READ)) {
+	if (FILTER(ELF_HEADERS) && vma->vm_pgoff == 0 &&
+	    (vma->vm_flags & VM_READ)) {
 		u32 __user *header = (u32 __user *)vma->vm_start;
 		u32 word;
 		mm_segment_t fs = get_fs();
@@ -1686,8 +1684,8 @@ static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds,
 	struct timeval tv;
 	int res, invoke_orig;
 
-	if (readyfds != NULL
-	    && !access_ok(VERIFY_WRITE, readyfds, sizeof(*readyfds)))
+	if (readyfds != NULL &&
+	    !access_ok(VERIFY_WRITE, readyfds, sizeof(*readyfds)))
 		return (-EFAULT);
 
 	if (timeout != NULL) {
@@ -1728,8 +1726,8 @@ static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds,
 
 	if (res < 0)
 		return (res);
-	if (readyfds != NULL
-	    && s2e_copy_to_user(readyfds, &res, sizeof(*readyfds)))
+	if (readyfds != NULL &&
+	    s2e_copy_to_user(readyfds, &res, sizeof(*readyfds)))
 		return (-EFAULT);
 	return (0);
 }
@@ -1773,8 +1771,8 @@ int asmlinkage cgcos_random(char __user *buf, size_t count,
 	int ret;
 
 	current->cgc_bytes = 0;
-	if (rnd_out != NULL
-	    && !access_ok(VERIFY_WRITE, rnd_out, sizeof(*rnd_out)))
+	if (rnd_out != NULL &&
+	    !access_ok(VERIFY_WRITE, rnd_out, sizeof(*rnd_out)))
 		return (-EFAULT);
 
 	if (s2e_decree_monitor_enabled) {
@@ -1803,8 +1801,8 @@ int asmlinkage cgcos_random(char __user *buf, size_t count,
 		s2e_decree_random(current->pid, current->comm, buf, count);
 	}
 
-	if (rnd_out != NULL
-	    && s2e_copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
+	if (rnd_out != NULL &&
+	    s2e_copy_to_user(rnd_out, &count, sizeof(*rnd_out)))
 		return (-EFAULT);
 
 	return 0;
@@ -1812,8 +1810,8 @@ int asmlinkage cgcos_random(char __user *buf, size_t count,
 
 static int asmlinkage cgcos_deallocate(unsigned long ptr, size_t len)
 {
-	if ((ptr + len) <= CGC_MAGIC_PAGE
-	    || ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE)) {
+	if ((ptr + len) <= CGC_MAGIC_PAGE ||
+	    ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE)) {
 		int res = vm_munmap(ptr, len);
 		if (res == 0 && s2e_decree_monitor_enabled) {
 			s2e_decree_update_memory_map(
@@ -1831,8 +1829,8 @@ int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
 	size_t count_orig;
 
 	current->cgc_bytes = 0;
-	if (tx_bytes != NULL
-	    && !access_ok(VERIFY_WRITE, tx_bytes, sizeof(*tx_bytes)))
+	if (tx_bytes != NULL &&
+	    !access_ok(VERIFY_WRITE, tx_bytes, sizeof(*tx_bytes)))
 		return (-EFAULT);
 	if (current->cgc_max_transmit != 0 && current->cgc_max_transmit < count)
 		count = current->cgc_max_transmit;
@@ -1858,8 +1856,8 @@ int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
 	}
 
 	current->cgc_bytes = res;
-	if (tx_bytes != NULL
-	    && s2e_copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
+	if (tx_bytes != NULL &&
+	    s2e_copy_to_user(tx_bytes, &res, sizeof(*tx_bytes)))
 		return (-EFAULT);
 	return (0);
 }
@@ -1871,8 +1869,8 @@ int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
 	int invoke_orig = 1;
 
 	current->cgc_bytes = 0;
-	if (rx_bytes != NULL
-	    && !access_ok(VERIFY_WRITE, rx_bytes, sizeof(*rx_bytes)))
+	if (rx_bytes != NULL &&
+	    !access_ok(VERIFY_WRITE, rx_bytes, sizeof(*rx_bytes)))
 		return (-EFAULT);
 	if (current->cgc_max_receive != 0 && current->cgc_max_receive < count)
 		count = current->cgc_max_receive;
@@ -1925,8 +1923,8 @@ int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
 	}
 
 	current->cgc_bytes = res;
-	if (rx_bytes != NULL
-	    && s2e_copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
+	if (rx_bytes != NULL &&
+	    s2e_copy_to_user(rx_bytes, &res, sizeof(*rx_bytes)))
 		return (-EFAULT);
 	return (0);
 }
@@ -1948,10 +1946,7 @@ static const struct sysent cgcos_syscall_table[] = {
 	{cgcos_random, 3, "random", "xdp"},	/* 7 */
 };
 
-unsigned int cgcos_get_personality(void)
-{
-	return current->personality;
-}
+unsigned int cgcos_get_personality(void) { return current->personality; }
 
 void cgcos_syscall_dummy(int segment, struct pt_regs *regs)
 {
@@ -2079,12 +2074,11 @@ static struct ctl_table cgc_sys_table[] = {
 	},
 	{}};
 
-static struct ctl_table cgc_root_table[] = {{
-						    .procname = "cgc",
-						    .mode = 0555,
-						    .child = cgc_sys_table,
-					    },
-					    {}};
+static struct ctl_table cgc_root_table[] = {
+	{
+		.procname = "cgc", .mode = 0555, .child = cgc_sys_table,
+	},
+	{}};
 
 static struct ctl_table_header *cgc_sysctls;
 
