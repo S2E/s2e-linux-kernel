@@ -1,6 +1,6 @@
 /// S2E Selective Symbolic Execution Platform
 ///
-/// Copyright (c) 2015-2017, Cyberhaven
+/// Copyright (c) 2015-2019, Cyberhaven
 /// Copyright (c) 2017, Dependable Systems Laboratory, EPFL
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -34,28 +34,32 @@
 /* This is declared in kernel/s2e/vars.c */
 extern char s2e_decree_monitor_enabled;
 
-static inline void s2e_decree_process_load(pid_t pid, const char *name, const struct task_struct *t, const void *hdr,
-					   size_t hdr_size, const char *path, uintptr_t entry)
+/* TODO: avoid duplication with LinuxMonitor */
+static inline void s2e_decree_process_load(pid_t pid, const char *path)
 {
-	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
-		cmd.Command = DECREE_PROCESS_LOAD;
-		cmd.currentPid = pid;
-		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
-		cmd.ProcessLoad.cgc_header = (uintptr_t)hdr;
-		cmd.ProcessLoad.start_code = t->mm->start_code;
-		cmd.ProcessLoad.end_code = t->mm->end_code;
-		cmd.ProcessLoad.start_data = t->mm->start_data;
-		cmd.ProcessLoad.end_data = t->mm->end_data;
-		cmd.ProcessLoad.start_stack = t->mm->start_stack;
-		cmd.ProcessLoad.process_id = t->pid;
-		cmd.ProcessLoad.entry_point = entry;
-		strncpy(cmd.ProcessLoad.process_path, path, sizeof(cmd.ProcessLoad.process_path));
+	struct S2E_DECREEMON_COMMAND cmd = {0};
+	cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+	cmd.Command = DECREE_PROCESS_LOAD;
+	cmd.currentPid = pid;
 
-		__s2e_touch_buffer(hdr, hdr_size);
-		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
-	}
+	cmd.ProcessLoad.process_path = path;
+	s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
+}
+
+static inline void s2e_decree_module_load(const char *path, uint64_t pid, uint64_t entry_point,
+					  const struct S2E_LINUXMON_PHDR_DESC *phdr, size_t phdr_size)
+{
+	struct S2E_DECREEMON_COMMAND cmd = {0};
+	cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+	cmd.Command = DECREE_MODULE_LOAD;
+	cmd.currentPid = pid;
+
+	cmd.ModuleLoad.module_path = path;
+	cmd.ModuleLoad.entry_point = entry_point;
+	cmd.ModuleLoad.phdr = (uintptr_t)phdr;
+	cmd.ModuleLoad.phdr_size = phdr_size;
+
+	s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 }
 
 static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc, uint64_t address, uint64_t fault)

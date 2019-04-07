@@ -47,3 +47,9 @@ for DIR in ${DIRS}; do
             -exec ${CLANG_FORMAT} -i -style=file {} +
     done
 done
+
+SOURCES="decree-cgc-cfe/fs/binfmt_cgc.c linux-4.9.3/fs/binfmt_elf.c"
+
+for SOURCE in $SOURCES; do
+    ${CLANG_FORMAT} -i -style="{ColumnLimit: 80, UseTab: Always, IndentWidth: 8, ContinuationIndentWidth: 8, BreakBeforeBraces: Linux}" "$SOURCE"
+done
