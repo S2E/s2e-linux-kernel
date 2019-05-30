@@ -181,22 +181,6 @@ static inline void s2e_make_symbolic(void *buf, int size, const char *name) {
 }
 
 ///
-/// \brief Fill buffer with unconstrained symbolic valies without discarding concrete data
-///
-/// \param[out] buf The buffer to make concolic
-/// \param[in] size The buffer's size
-/// \param[in] name A descriptive name for the buffer
-///
-static inline void s2e_make_concolic(void *buf, int size, const char *name) {
-    __s2e_touch_string(name);
-    __s2e_touch_buffer(buf, size);
-    __asm__ __volatile__(
-        S2E_INSTRUCTION_REGISTERS_SIMPLE(BASE_S2E_MAKE_CONCOLIC)
-        : : "a" (buf), "d" (size), "c" (name) : "memory"
-    );
-}
-
-///
 /// \brief Terminate the currently-executing state
 ///
 /// \param[in] status Exit code
