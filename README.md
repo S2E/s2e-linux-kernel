@@ -17,7 +17,7 @@ If you just want to build the kernel without building a complete S2E image
 image each time), then you can do the following:
 
 ```
-sudo apt-get build-dep fakeroot linux-image$(uname -r)
+sudo apt-get build-dep fakeroot linux-image-$(uname -r)
 
 cd $KERNEL_DIR
 make defconfig
