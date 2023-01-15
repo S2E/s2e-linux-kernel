@@ -372,13 +372,13 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		return addr;
 
 	/*
-	* total_size is the size of the ELF (interpreter) image.
-	* The _first_ mmap needs to know the full size, otherwise
-	* randomization might put this image into an overlapping
-	* position with the ELF binary image. (since size < total_size)
-	* So we first map the 'big' image - and unmap the remainder at
-	* the end. (which unmap is needed for ELF images with holes.)
-	*/
+	 * total_size is the size of the ELF (interpreter) image.
+	 * The _first_ mmap needs to know the full size, otherwise
+	 * randomization might put this image into an overlapping
+	 * position with the ELF binary image. (since size < total_size)
+	 * So we first map the 'big' image - and unmap the remainder at
+	 * the end. (which unmap is needed for ELF images with holes.)
+	 */
 	if (total_size) {
 		total_size = ELF_PAGEALIGN(total_size);
 		map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
@@ -1995,7 +1995,7 @@ static void free_note_info(struct elf_note_info *info)
 struct elf_thread_status {
 	struct list_head list;
 	struct elf_prstatus prstatus; /* NT_PRSTATUS */
-	elf_fpregset_t fpu;	   /* NT_PRFPREG */
+	elf_fpregset_t fpu;	      /* NT_PRFPREG */
 	struct task_struct *thread;
 #ifdef ELF_CORE_COPY_XFPREGS
 	elf_fpxregset_t xfpu; /* ELF_CORE_XFPREG_TYPE */

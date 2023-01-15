@@ -133,9 +133,9 @@ typedef struct CGC32_hdr {
 /* The CGC Executable Program Header */
 typedef struct CGC32_phdr {
 	uint32_t p_type;      /* Section type */
-#define PT_NULL 0	     /* Unused header */
-#define PT_LOAD 1	     /* Segment is loaded into mem */
-#define PT_PHDR 6	     /* Program header tbl itself */
+#define PT_NULL 0	      /* Unused header */
+#define PT_LOAD 1	      /* Segment is loaded into mem */
+#define PT_PHDR 6	      /* Program header tbl itself */
 #define PT_CGCPOV2 0x6ccccccc /* CFE Type 2 PoV flag sect */
 	uint32_t p_offset;    /* Offset into the file */
 	uint32_t p_vaddr;     /* Virtial program address */
@@ -143,9 +143,9 @@ typedef struct CGC32_phdr {
 	uint32_t p_filesz;    /* Section bytes in the file */
 	uint32_t p_memsz;     /* Section bytes in memory */
 	uint32_t p_flags;     /* section flags */
-#define CPF_X (1 << 0)	/* Mapped executable */
-#define CPF_W (1 << 1)	/* Mapped writeable */
-#define CPF_R (1 << 2)	/* Mapped readable */
+#define CPF_X (1 << 0)	      /* Mapped executable */
+#define CPF_W (1 << 1)	      /* Mapped writeable */
+#define CPF_R (1 << 2)	      /* Mapped readable */
 	/* Acceptable flag combinations are:
 	 *	CPF_R
 	 *	CPF_R|CPF_W
@@ -1611,7 +1611,7 @@ whole:
  */
 struct sysent {
 	void *se_syscall; /* function to call */
-	short se_nargs;   /* number of aguments */
+	short se_nargs;	  /* number of aguments */
 
 	/*
 	 * Theses are only used for syscall tracing.
@@ -1978,13 +1978,13 @@ int asmlinkage cgcos_terminate(int code)
 
 static const struct sysent cgcos_syscall_table[] = {
 	{NULL, 0, "nosys", ""},			   /* 0 */
-	{cgcos_terminate, 1, "terminate", "d"},    /* 1 */
+	{cgcos_terminate, 1, "terminate", "d"},	   /* 1 */
 	{cgcos_transmit, 4, "transmit", "dpdp"},   /* 2 */
-	{cgcos_receive, 4, "receive", "dpdp"},     /* 3 */
-	{cgcos_fdwait, 5, "fdwait", "dxxxp"},      /* 4 */
-	{cgcos_allocate, 3, "allocate", "xxp"},    /* 5 */
+	{cgcos_receive, 4, "receive", "dpdp"},	   /* 3 */
+	{cgcos_fdwait, 5, "fdwait", "dxxxp"},	   /* 4 */
+	{cgcos_allocate, 3, "allocate", "xxp"},	   /* 5 */
 	{cgcos_deallocate, 2, "deallocate", "xd"}, /* 6 */
-	{cgcos_random, 3, "random", "xdp"},	/* 7 */
+	{cgcos_random, 3, "random", "xdp"},	   /* 7 */
 };
 
 unsigned int cgcos_get_personality(void) { return current->personality; }
@@ -2115,11 +2115,12 @@ static struct ctl_table cgc_sys_table[] = {
 	},
 	{}};
 
-static struct ctl_table cgc_root_table[] = {
-	{
-		.procname = "cgc", .mode = 0555, .child = cgc_sys_table,
-	},
-	{}};
+static struct ctl_table cgc_root_table[] = {{
+						    .procname = "cgc",
+						    .mode = 0555,
+						    .child = cgc_sys_table,
+					    },
+					    {}};
 
 static struct ctl_table_header *cgc_sysctls;
 
