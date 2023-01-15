@@ -30,13 +30,8 @@
 
 static int __init s2e_init(void)
 {
-	uint64_t current_task_addr = (uintptr_t)&s2e_current_task;
-	uint64_t task_struct_pid_offset = offsetof(struct task_struct, pid);
-	uint64_t task_struct_tgid_offset = offsetof(struct task_struct, tgid);
-
 	if (num_online_cpus() > 1) {
 		s2e_printf("LinuxMonitor only supports single-CPU systems\n");
-
 		return 1;
 	}
 
@@ -47,8 +42,7 @@ static int __init s2e_init(void)
 
 	/* Send addresses and offsets to the LinuxMonitor plugin */
 	if (s2e_linux_monitor_enabled) {
-		s2e_linux_init(PAGE_OFFSET, __START_KERNEL, current_task_addr, task_struct_pid_offset,
-			       task_struct_tgid_offset);
+		s2e_linux_init(PAGE_OFFSET, __START_KERNEL);
 	}
 
 	return 0;

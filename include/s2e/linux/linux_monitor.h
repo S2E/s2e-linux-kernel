@@ -31,26 +31,36 @@
 
 /* These are declared in kernel/s2e/vars.c */
 extern char s2e_linux_monitor_enabled;
-extern struct task_struct *s2e_current_task;
 
-static inline void s2e_linux_process_load(pid_t pid, const char *path)
+static inline void s2e_linux_init_task(struct S2E_LINUXMON_TASK *lmt, struct task_struct *task)
+{
+	lmt->task_struct = task;
+	lmt->pid = task->pid;
+	lmt->tgid = task->tgid;
+}
+
+static inline struct S2E_LINUXMON_COMMAND s2e_linux_init_cmd(struct task_struct *task)
 {
 	struct S2E_LINUXMON_COMMAND cmd = {0};
 	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	s2e_linux_init_task(&cmd.CurrentTask, task);
+	return cmd;
+}
+
+static inline void s2e_linux_process_load(struct task_struct *task, const char *path)
+{
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_PROCESS_LOAD;
-	cmd.currentPid = pid;
 
 	cmd.ProcessLoad.process_path = path;
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_module_load(const char *path, uint64_t pid, uint64_t entry_point,
+static inline void s2e_linux_module_load(const char *path, struct task_struct *task, uint64_t entry_point,
 					 const struct S2E_LINUXMON_PHDR_DESC *phdr, size_t phdr_size)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_MODULE_LOAD;
-	cmd.currentPid = pid;
 
 	cmd.ModuleLoad.module_path = path;
 	cmd.ModuleLoad.entry_point = entry_point;
@@ -60,12 +70,11 @@ static inline void s2e_linux_module_load(const char *path, uint64_t pid, uint64_
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_segfault(pid_t pid, uint64_t pc, uint64_t address, uint64_t fault)
+static inline void s2e_linux_segfault(struct task_struct *task, uint64_t pc, uint64_t address, uint64_t fault)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_SEGFAULT;
-	cmd.currentPid = pid;
+
 	cmd.SegFault.pc = pc;
 	cmd.SegFault.address = address;
 	cmd.SegFault.fault = fault;
@@ -73,12 +82,10 @@ static inline void s2e_linux_segfault(pid_t pid, uint64_t pc, uint64_t address, 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_trap(pid_t pid, uint64_t pc, int trapnr, int signr, long error_code)
+static inline void s2e_linux_trap(struct task_struct *task, uint64_t pc, int trapnr, int signr, long error_code)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_TRAP;
-	cmd.currentPid = pid;
 
 	cmd.Trap.pc = pc;
 	cmd.Trap.trapnr = trapnr;
@@ -88,52 +95,49 @@ static inline void s2e_linux_trap(pid_t pid, uint64_t pc, int trapnr, int signr,
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_process_exit(pid_t pid, uint64_t code)
+static inline void s2e_linux_process_exit(struct task_struct *task, uint64_t code)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_PROCESS_EXIT;
-	cmd.currentPid = pid;
 	cmd.ProcessExit.code = code;
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_init(uint64_t page_offset, uint64_t start_kernel, uint64_t current_task_address,
-				  uint64_t task_struct_pid_offset, uint64_t task_struct_tgid_offset)
+static inline void s2e_linux_thread_exit(struct task_struct *task, uint64_t code)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
+	cmd.Command = LINUX_THREAD_EXIT;
+	cmd.ThreadExit.code = code;
+
+	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
+}
+
+static inline void s2e_linux_init(uint64_t page_offset, uint64_t start_kernel)
+{
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(current);
 	cmd.Command = LINUX_INIT;
-	cmd.currentPid = -1;
 	cmd.Init.page_offset = page_offset;
 	cmd.Init.start_kernel = start_kernel;
-	cmd.Init.current_task_address = current_task_address;
-	cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
-	cmd.Init.task_struct_tgid_offset = task_struct_tgid_offset;
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
 static inline void s2e_linux_kernel_panic(const char *msg, unsigned msg_size)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(current);
 	cmd.Command = LINUX_KERNEL_PANIC;
-	cmd.currentPid = -1;
 	cmd.Panic.message = (uintptr_t)msg;
 	cmd.Panic.message_size = msg_size;
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_mmap(pid_t pid, unsigned long addr, unsigned long len, unsigned long prot,
+static inline void s2e_linux_mmap(struct task_struct *task, unsigned long addr, unsigned long len, unsigned long prot,
 				  unsigned long flag, unsigned long pgoff)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_MEMORY_MAP;
-	cmd.currentPid = pid;
 	cmd.MemMap.address = addr;
 	cmd.MemMap.size = len;
 	cmd.MemMap.prot = prot;
@@ -143,27 +147,34 @@ static inline void s2e_linux_mmap(pid_t pid, unsigned long addr, unsigned long l
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_unmap(pid_t pid, unsigned long start, unsigned long end)
+static inline void s2e_linux_unmap(struct task_struct *task, unsigned long start, unsigned long end)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_MEMORY_UNMAP;
-	cmd.currentPid = pid;
 	cmd.MemUnmap.start = start;
 	cmd.MemUnmap.end = end;
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_linux_mprotect(pid_t pid, unsigned long start, unsigned long len, unsigned long prot)
+static inline void s2e_linux_mprotect(struct task_struct *task, unsigned long start, unsigned long len,
+				      unsigned long prot)
 {
-	struct S2E_LINUXMON_COMMAND cmd = {0};
-	cmd.version = S2E_LINUXMON_COMMAND_VERSION;
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(task);
 	cmd.Command = LINUX_MEMORY_PROTECT;
-	cmd.currentPid = pid;
 	cmd.MemProtect.start = start;
 	cmd.MemProtect.size = len;
 	cmd.MemProtect.prot = prot;
+
+	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
+}
+
+static inline void s2e_linux_task_switch(struct task_struct *prev, struct task_struct *next)
+{
+	struct S2E_LINUXMON_COMMAND cmd = s2e_linux_init_cmd(current);
+	cmd.Command = LINUX_TASK_SWITCH;
+	s2e_linux_init_task(&cmd.TaskSwitch.prev, prev);
+	s2e_linux_init_task(&cmd.TaskSwitch.next, next);
 
 	s2e_invoke_plugin("LinuxMonitor", &cmd, sizeof(cmd));
 }

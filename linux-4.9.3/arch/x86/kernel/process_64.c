@@ -51,6 +51,10 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/vdso.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 __visible DEFINE_PER_CPU(unsigned long, rsp_scratch);
 
 /* Prints also some state that isn't saved in the pt_regs */
@@ -472,6 +476,10 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 		if (ss_sel != __KERNEL_DS)
 			loadsegment(ss, __KERNEL_DS);
 	}
+
+#ifdef CONFIG_S2E
+	s2e_linux_task_switch(prev_p, next_p);
+#endif
 
 	return prev_p;
 }

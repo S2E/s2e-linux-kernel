@@ -5,25 +5,21 @@
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to
-/// deal
-/// in the Software without restriction, including without limitation the rights
+/// deal in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
 ///
 /// The above copyright notice and this permission notice shall be included in
-/// all
-/// copies or substantial portions of the Software.
+/// all copies or substantial portions of the Software.
 ///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-/// FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE
-/// SOFTWARE.
+/// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
 
 #ifndef S2E_DECREE_COMMANDS_H
 #define S2E_DECREE_COMMANDS_H
@@ -40,7 +36,7 @@
 extern "C" {
 #endif
 
-#define S2E_DECREEMON_COMMAND_VERSION 0x201903202239ULL // date +%Y%m%d%H%M
+#define S2E_DECREEMON_COMMAND_VERSION 0x202301082207ULL // date +%Y%m%d%H%M
 
 enum S2E_DECREEMON_COMMANDS {
 	DECREE_SEGFAULT,
@@ -62,7 +58,8 @@ enum S2E_DECREEMON_COMMANDS {
 	DECREE_SET_CB_PARAMS,
 	DECREE_INIT,
 	DECREE_KERNEL_PANIC,
-	DECREE_MODULE_LOAD
+	DECREE_MODULE_LOAD,
+	DECREE_TASK_SWITCH
 };
 
 struct S2E_DECREEMON_COMMAND_READ_DATA {
@@ -179,7 +176,6 @@ struct S2E_DECREEMON_VMA {
 struct S2E_DECREEMON_COMMAND_INIT {
 	uint64_t page_offset;
 	uint64_t start_kernel;
-	uint64_t task_struct_pid_offset;
 } __attribute__((packed));
 
 struct S2E_DECREEMON_COMMAND_KERNEL_PANIC {
@@ -190,7 +186,7 @@ struct S2E_DECREEMON_COMMAND_KERNEL_PANIC {
 struct S2E_DECREEMON_COMMAND {
 	uint64_t version;
 	enum S2E_DECREEMON_COMMANDS Command;
-	uint64_t currentPid;
+	struct S2E_LINUXMON_TASK CurrentTask;
 	union {
 		struct S2E_LINUXMON_COMMAND_PROCESS_LOAD ProcessLoad;
 		struct S2E_LINUXMON_COMMAND_MODULE_LOAD ModuleLoad;
@@ -208,6 +204,7 @@ struct S2E_DECREEMON_COMMAND {
 		struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS CbParams;
 		struct S2E_DECREEMON_COMMAND_INIT Init;
 		struct S2E_DECREEMON_COMMAND_KERNEL_PANIC Panic;
+		struct S2E_LINUXMON_COMMAND_TASK_SWITCH TaskSwitch;
 	};
 	char currentName[32]; // not NULL terminated
 } __attribute__((packed));

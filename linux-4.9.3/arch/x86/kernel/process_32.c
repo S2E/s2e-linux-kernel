@@ -55,6 +55,10 @@
 #include <asm/switch_to.h>
 #include <asm/vm86.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 void __show_regs(struct pt_regs *regs, int all)
 {
 	unsigned long cr0 = 0L, cr2 = 0L, cr3 = 0L, cr4 = 0L;
@@ -298,6 +302,10 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 	switch_fpu_finish(next_fpu, fpu_switch);
 
 	this_cpu_write(current_task, next_p);
+
+#ifdef CONFIG_S2E
+	s2e_linux_task_switch(prev_p, next_p);
+#endif
 
 	return prev_p;
 }

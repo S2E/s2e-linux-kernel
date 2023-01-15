@@ -37,18 +37,3 @@
  */
 char s2e_linux_monitor_enabled = 0;
 EXPORT_SYMBOL(s2e_linux_monitor_enabled);
-
-/*
- * Shadows the `current` macro in arch/x86/include/asm/current.h.
- *
- * This is required because we cannot safely access the `current_task` variable
- * (arch/x86/kernel/cpu/common.c) directly, as it is a per-CPU global variable.
- * We therefore assume that S2E is being run on a single-CPU VM, and whenever a
- * context switch happens (in `__switch_to`) we update this `s2e_current_task`
- * to point to the newly running task.
- *
- * This then allows S2E to read the `current_task` data whenever it needs to
- * get the current PID.
- */
-struct task_struct *s2e_current_task;
-EXPORT_SYMBOL(s2e_current_task);

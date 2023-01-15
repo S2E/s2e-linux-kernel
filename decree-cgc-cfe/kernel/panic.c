@@ -105,7 +105,7 @@ void panic(const char *fmt, ...)
 	va_end(args);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_kernel_panic(buf, sizeof(buf));
+		s2e_decree_kernel_panic(current, buf, sizeof(buf));
 	}
 
 
