@@ -489,7 +489,7 @@ SYSCALL_DEFINE3(mprotect, unsigned long, start, size_t, len,
 
 #ifdef CONFIG_S2E
 	if (s2e_linux_monitor_enabled && !ret) {
-		s2e_linux_mprotect(current->pid, start, len, prot);
+		s2e_linux_mprotect(current, start, len, prot);
 	}
 #endif
 	return ret;
@@ -502,7 +502,7 @@ SYSCALL_DEFINE4(pkey_mprotect, unsigned long, start, size_t, len,
 
 #ifdef CONFIG_S2E
 	if (s2e_linux_monitor_enabled && !ret) {
-		s2e_linux_mprotect(current->pid, start, len, prot);
+		s2e_linux_mprotect(current, start, len, prot);
 	}
 #endif
 	return ret;

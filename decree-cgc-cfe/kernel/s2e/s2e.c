@@ -30,8 +30,6 @@
 
 static int __init s2e_init(void)
 {
-	size_t task_struct_pid_offset = offsetof(struct task_struct, pid);
-
 	/* Check if the DecreeMonitor plugin is enabled */
 	if (boot_cpu_has(X86_FEATURE_S2E) && s2e_plugin_loaded("DecreeMonitor")) {
 		s2e_decree_monitor_enabled = 1;
@@ -39,7 +37,7 @@ static int __init s2e_init(void)
 
 	/* Send addresses and offsets to the DecreeMonitor plugin */
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_init(PAGE_OFFSET, __START_KERNEL, task_struct_pid_offset);
+		s2e_decree_init(current, PAGE_OFFSET, __START_KERNEL);
 	}
 
 	return 0;

@@ -239,7 +239,7 @@ force_sig_info_fault(int si_signo, int si_code, unsigned long address,
 #ifdef CONFIG_DEBUG_S2E
 		s2e_printf("SEGFAULT at 0x%lx\n", task_pt_regs(tsk)->ip);
 #endif
-		s2e_linux_segfault(current->pid,
+		s2e_linux_segfault(tsk,
 			task_pt_regs(tsk)->ip,
 			address,
 			fault);

@@ -315,7 +315,7 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 
 #ifdef CONFIG_S2E
 	if (s2e_linux_monitor_enabled && (ret != -1)) {
-		s2e_linux_mmap(current->pid, ret, len, prot, flag, pgoff);
+		s2e_linux_mmap(current, ret, len, prot, flag, pgoff);
 	}
 #endif
 

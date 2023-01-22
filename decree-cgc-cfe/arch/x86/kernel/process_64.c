@@ -50,6 +50,8 @@
 #include <asm/debugreg.h>
 #include <asm/switch_to.h>
 
+#include <s2e/decree/decree_monitor.h>
+
 asmlinkage extern void ret_from_fork(void);
 
 asmlinkage DEFINE_PER_CPU(unsigned long, old_rsp);
@@ -426,6 +428,8 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 	if (unlikely(task_thread_info(next_p)->flags & _TIF_WORK_CTXSW_NEXT ||
 		     task_thread_info(prev_p)->flags & _TIF_WORK_CTXSW_PREV))
 		__switch_to_xtra(prev_p, next_p, tss);
+
+	s2e_decree_task_switch(prev_p, next_p);
 
 	return prev_p;
 }

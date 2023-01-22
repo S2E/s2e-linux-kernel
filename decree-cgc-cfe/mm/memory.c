@@ -3823,7 +3823,7 @@ int handle_mm_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 	}
 
 	if (s2e_decree_monitor_enabled && current->personality == PER_CGCOS) {
-		s2e_decree_update_memory_map(current->pid, current->comm, current->mm);
+		s2e_decree_update_memory_map(current, current->comm, current->mm);
 	}
 
 	return ret;

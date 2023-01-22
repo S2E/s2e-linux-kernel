@@ -2468,7 +2468,7 @@ static void unmap_region(struct mm_struct *mm,
 
 #ifdef CONFIG_S2E
 	if (s2e_linux_monitor_enabled) {
-		s2e_linux_unmap(current->pid, start, end);
+		s2e_linux_unmap(current, start, end);
 	}
 #endif
 }

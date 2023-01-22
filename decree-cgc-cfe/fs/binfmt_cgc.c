@@ -133,9 +133,9 @@ typedef struct CGC32_hdr {
 /* The CGC Executable Program Header */
 typedef struct CGC32_phdr {
 	uint32_t p_type;      /* Section type */
-#define PT_NULL 0	     /* Unused header */
-#define PT_LOAD 1	     /* Segment is loaded into mem */
-#define PT_PHDR 6	     /* Program header tbl itself */
+#define PT_NULL 0	      /* Unused header */
+#define PT_LOAD 1	      /* Segment is loaded into mem */
+#define PT_PHDR 6	      /* Program header tbl itself */
 #define PT_CGCPOV2 0x6ccccccc /* CFE Type 2 PoV flag sect */
 	uint32_t p_offset;    /* Offset into the file */
 	uint32_t p_vaddr;     /* Virtial program address */
@@ -143,9 +143,9 @@ typedef struct CGC32_phdr {
 	uint32_t p_filesz;    /* Section bytes in the file */
 	uint32_t p_memsz;     /* Section bytes in memory */
 	uint32_t p_flags;     /* section flags */
-#define CPF_X (1 << 0)	/* Mapped executable */
-#define CPF_W (1 << 1)	/* Mapped writeable */
-#define CPF_R (1 << 2)	/* Mapped readable */
+#define CPF_X (1 << 0)	      /* Mapped executable */
+#define CPF_W (1 << 1)	      /* Mapped writeable */
+#define CPF_R (1 << 2)	      /* Mapped readable */
 	/* Acceptable flag combinations are:
 	 *	CPF_R
 	 *	CPF_R|CPF_W
@@ -241,7 +241,7 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 	struct cgc_params pars;
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_process_load(current->pid, bprm->interp);
+		s2e_decree_process_load(current, bprm->interp);
 	}
 
 	memset(&pars, 0, sizeof(pars));
@@ -561,9 +561,9 @@ static int load_cgcos_binary(struct linux_binprm *bprm)
 	ret = 0;
 out:
 	if (ret == 0 && s2e_decree_monitor_enabled) {
-		s2e_decree_module_load(bprm->interp, current->pid, hdr.c_entry,
+		s2e_decree_module_load(current, bprm->interp, hdr.c_entry,
 				       elf_phdr, elf_phdr_size);
-		s2e_decree_update_memory_map(current->pid, current->comm,
+		s2e_decree_update_memory_map(current, current->comm,
 					     current->mm);
 	}
 	if (phdrs)
@@ -594,7 +594,7 @@ static void s2e_decree_set_args(int *skip_rng)
 	params.cgc_seed_ptr = (uintptr_t)current->cgc_seed;
 	params.cgc_seed_len = current->cgc_seed_len;
 
-	s2e_decree_do_set_args(current->pid, current->comm, &params);
+	s2e_decree_do_set_args(current, current->comm, &params);
 
 	/* Write back new param values */
 	current->cgc_max_transmit = params.cgc_max_transmit;
@@ -1611,7 +1611,7 @@ whole:
  */
 struct sysent {
 	void *se_syscall; /* function to call */
-	short se_nargs;   /* number of aguments */
+	short se_nargs;	  /* number of aguments */
 
 	/*
 	 * Theses are only used for syscall tracing.
@@ -1705,13 +1705,13 @@ long s2e_copy_to_user(void __user *to, const void *from, long n)
 {
 	long ret;
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_copy_to_user(current->pid, current->comm, to, from,
-					n, 0, 0);
+		s2e_decree_copy_to_user(current, current->comm, to, from, n, 0,
+					0);
 	}
 	ret = copy_to_user(to, from, n);
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_copy_to_user(current->pid, current->comm, to, from,
-					n, 1, ret);
+		s2e_decree_copy_to_user(current, current->comm, to, from, n, 1,
+					ret);
 	}
 	return ret;
 }
@@ -1746,13 +1746,13 @@ static int asmlinkage cgcos_fdwait(int nfds, fd_set __user *readfds,
 	if (s2e_decree_monitor_enabled) {
 		invoke_orig = 1;
 		if (timeout != NULL) {
-			res = s2e_decree_waitfds(current->pid, current->comm,
-						 nfds, true, to->tv_sec,
-						 to->tv_nsec, &invoke_orig);
+			res = s2e_decree_waitfds(current, current->comm, nfds,
+						 true, to->tv_sec, to->tv_nsec,
+						 &invoke_orig);
 		} else {
-			res = s2e_decree_waitfds(current->pid, current->comm,
-						 nfds, false, to->tv_sec,
-						 to->tv_nsec, &invoke_orig);
+			res = s2e_decree_waitfds(current, current->comm, nfds,
+						 false, to->tv_sec, to->tv_nsec,
+						 &invoke_orig);
 		}
 		if (invoke_orig) {
 			res = core_sys_select(nfds, readfds, writefds, NULL,
@@ -1786,8 +1786,8 @@ static int asmlinkage cgcos_allocate(unsigned long len, unsigned long exec,
 		return (-EFAULT);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_handle_symbolic_allocate_size(current->pid,
-							 current->comm, &len);
+		s2e_decree_handle_symbolic_allocate_size(current, current->comm,
+							 &len);
 	}
 
 	res = vm_mmap(NULL, 0, len, prot, MAP_ANON | MAP_PRIVATE, 0);
@@ -1798,7 +1798,7 @@ static int asmlinkage cgcos_allocate(unsigned long len, unsigned long exec,
 		return (-EFAULT);
 	}
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_update_memory_map(current->pid, current->comm,
+		s2e_decree_update_memory_map(current, current->comm,
 					     current->mm);
 	}
 	return (0);
@@ -1817,8 +1817,8 @@ int asmlinkage cgcos_random(char __user *buf, size_t count,
 		return (-EFAULT);
 
 	if (s2e_decree_monitor_enabled) {
-		s2e_decree_handle_symbolic_random_buffer(
-			current->pid, current->comm, (void **)&buf, &count);
+		s2e_decree_handle_symbolic_random_buffer(current, current->comm,
+							 (void **)&buf, &count);
 	}
 
 	for (i = 0; i < count; i += sizeof(randval)) {
@@ -1839,7 +1839,7 @@ int asmlinkage cgcos_random(char __user *buf, size_t count,
 	if (s2e_decree_monitor_enabled) {
 		// either replace everything with symbolic data, or make values
 		// concolic
-		s2e_decree_random(current->pid, current->comm, buf, count);
+		s2e_decree_random(current, current->comm, buf, count);
 	}
 
 	if (rnd_out != NULL &&
@@ -1855,8 +1855,8 @@ static int asmlinkage cgcos_deallocate(unsigned long ptr, size_t len)
 	    ptr >= (CGC_MAGIC_PAGE + PAGE_SIZE)) {
 		int res = vm_munmap(ptr, len);
 		if (res == 0 && s2e_decree_monitor_enabled) {
-			s2e_decree_update_memory_map(
-				current->pid, current->comm, current->mm);
+			s2e_decree_update_memory_map(current, current->comm,
+						     current->mm);
 		}
 		return res;
 	}
@@ -1880,7 +1880,7 @@ int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
 
 	if (s2e_decree_monitor_enabled) {
 		s2e_decree_handle_symbolic_transmit_buffer(
-			current->pid, current->comm, (void **)&buf, &count);
+			current, current->comm, (void **)&buf, &count);
 	}
 
 	if (count != 0) {
@@ -1891,8 +1891,8 @@ int asmlinkage cgcos_transmit(int fd, char __user *buf, size_t count,
 
 		if (s2e_decree_monitor_enabled) {
 			// res becomes symbolic if count_orig was symbolic
-			s2e_decree_write_data(current->pid, current->comm, fd,
-					      buf, &res, &count_orig);
+			s2e_decree_write_data(current, current->comm, fd, buf,
+					      &res, &count_orig);
 		}
 	}
 
@@ -1917,7 +1917,7 @@ int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
 		count = current->cgc_max_receive;
 
 	if (s2e_decree_monitor_enabled) {
-		invoke_orig = s2e_get_cfg_bool(current->pid, current->comm,
+		invoke_orig = s2e_get_cfg_bool(current, current->comm,
 					       "invokeOriginalSyscalls");
 	}
 
@@ -1929,16 +1929,15 @@ int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
 			}
 
 			if (s2e_decree_monitor_enabled) {
-				s2e_decree_read_data_post(current->pid,
-							  current->comm, fd,
-							  buf, res);
+				s2e_decree_read_data_post(
+					current, current->comm, fd, buf, res);
 			}
 		}
 	} else {
 		size_t count_orig = count; // remember original symbolic size
 
 		s2e_decree_handle_symbolic_receive_buffer(
-			current->pid, current->comm, (void **)&buf, &count);
+			current, current->comm, (void **)&buf, &count);
 
 		if (count != 0) {
 			void *kbuf;
@@ -1951,8 +1950,8 @@ int asmlinkage cgcos_receive(int fd, char __user *buf, size_t count,
 			}
 
 			// res becomes symbolic if count_orig was symbolic
-			s2e_decree_read_data(current->pid, current->comm, fd,
-					     kbuf, count, &count_orig, &res);
+			s2e_decree_read_data(current, current->comm, fd, kbuf,
+					     count, &count_orig, &res);
 
 			if (s2e_copy_to_user(buf, kbuf, count)) {
 				kfree(kbuf);
@@ -1978,13 +1977,13 @@ int asmlinkage cgcos_terminate(int code)
 
 static const struct sysent cgcos_syscall_table[] = {
 	{NULL, 0, "nosys", ""},			   /* 0 */
-	{cgcos_terminate, 1, "terminate", "d"},    /* 1 */
+	{cgcos_terminate, 1, "terminate", "d"},	   /* 1 */
 	{cgcos_transmit, 4, "transmit", "dpdp"},   /* 2 */
-	{cgcos_receive, 4, "receive", "dpdp"},     /* 3 */
-	{cgcos_fdwait, 5, "fdwait", "dxxxp"},      /* 4 */
-	{cgcos_allocate, 3, "allocate", "xxp"},    /* 5 */
+	{cgcos_receive, 4, "receive", "dpdp"},	   /* 3 */
+	{cgcos_fdwait, 5, "fdwait", "dxxxp"},	   /* 4 */
+	{cgcos_allocate, 3, "allocate", "xxp"},	   /* 5 */
 	{cgcos_deallocate, 2, "deallocate", "xd"}, /* 6 */
-	{cgcos_random, 3, "random", "xdp"},	/* 7 */
+	{cgcos_random, 3, "random", "xdp"},	   /* 7 */
 };
 
 unsigned int cgcos_get_personality(void) { return current->personality; }
@@ -2115,11 +2114,12 @@ static struct ctl_table cgc_sys_table[] = {
 	},
 	{}};
 
-static struct ctl_table cgc_root_table[] = {
-	{
-		.procname = "cgc", .mode = 0555, .child = cgc_sys_table,
-	},
-	{}};
+static struct ctl_table cgc_root_table[] = {{
+						    .procname = "cgc",
+						    .mode = 0555,
+						    .child = cgc_sys_table,
+					    },
+					    {}};
 
 static struct ctl_table_header *cgc_sysctls;
 

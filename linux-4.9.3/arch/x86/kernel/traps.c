@@ -268,7 +268,7 @@ do_trap(int trapnr, int signr, char *str, struct pt_regs *regs,
 #ifdef CONFIG_DEBUG_S2E
 		s2e_printf("TRAP %ld at 0x%lx\n", error_code, task_pt_regs(tsk)->ip);
 #endif
-		s2e_linux_trap(tsk->pid, task_pt_regs(tsk)->ip, trapnr, signr, error_code);
+		s2e_linux_trap(tsk, task_pt_regs(tsk)->ip, trapnr, signr, error_code);
 	}
 #endif
 

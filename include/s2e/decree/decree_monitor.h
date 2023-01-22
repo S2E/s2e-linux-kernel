@@ -30,29 +30,34 @@
 #include <s2e/s2e.h>
 
 #include "commands.h"
+#include <s2e/linux/linux_monitor.h>
 
 /* This is declared in kernel/s2e/vars.c */
 extern char s2e_decree_monitor_enabled;
 
-/* TODO: avoid duplication with LinuxMonitor */
-static inline void s2e_decree_process_load(pid_t pid, const char *path)
+static inline struct S2E_DECREEMON_COMMAND s2e_decree_init_cmd(struct task_struct *task)
 {
 	struct S2E_DECREEMON_COMMAND cmd = {0};
 	cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+	s2e_linux_init_task(&cmd.CurrentTask, task);
+	return cmd;
+}
+
+/* TODO: avoid duplication with LinuxMonitor */
+static inline void s2e_decree_process_load(struct task_struct *task, const char *path)
+{
+	struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 	cmd.Command = DECREE_PROCESS_LOAD;
-	cmd.currentPid = pid;
 
 	cmd.ProcessLoad.process_path = path;
 	s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_decree_module_load(const char *path, uint64_t pid, uint64_t entry_point,
+static inline void s2e_decree_module_load(struct task_struct *task, const char *path, uint64_t entry_point,
 					  const struct S2E_LINUXMON_PHDR_DESC *phdr, size_t phdr_size)
 {
-	struct S2E_DECREEMON_COMMAND cmd = {0};
-	cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+	struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 	cmd.Command = DECREE_MODULE_LOAD;
-	cmd.currentPid = pid;
 
 	cmd.ModuleLoad.module_path = path;
 	cmd.ModuleLoad.entry_point = entry_point;
@@ -62,13 +67,12 @@ static inline void s2e_decree_module_load(const char *path, uint64_t pid, uint64
 	s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 }
 
-static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc, uint64_t address, uint64_t fault)
+static inline void s2e_decree_segfault(struct task_struct *task, const char *name, uint64_t pc, uint64_t address,
+				       uint64_t fault)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_SEGFAULT;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.SegFault.pc = pc;
 		cmd.SegFault.address = address;
@@ -78,14 +82,12 @@ static inline void s2e_decree_segfault(pid_t pid, const char *name, uint64_t pc,
 	}
 }
 
-static inline void s2e_decree_write_data(pid_t pid, const char *name, int fd, const void *buf, size_t *buf_size,
-					 size_t *size_expr)
+static inline void s2e_decree_write_data(struct task_struct *task, const char *name, int fd, const void *buf,
+					 size_t *buf_size, size_t *size_expr)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_WRITE_DATA;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.WriteData.fd = fd;
 		cmd.WriteData.buffer = (uintptr_t)buf;
@@ -99,14 +101,12 @@ static inline void s2e_decree_write_data(pid_t pid, const char *name, int fd, co
 	}
 }
 
-static inline void s2e_decree_read_data(pid_t pid, const char *name, int fd, const void *buf, size_t buf_size,
-					size_t *size_expr, size_t *res)
+static inline void s2e_decree_read_data(struct task_struct *task, const char *name, int fd, const void *buf,
+					size_t buf_size, size_t *size_expr, size_t *res)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_READ_DATA;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.Data.fd = fd;
 		cmd.Data.buffer = (uintptr_t)buf;
@@ -121,13 +121,12 @@ static inline void s2e_decree_read_data(pid_t pid, const char *name, int fd, con
 	}
 }
 
-static inline void s2e_decree_read_data_post(pid_t pid, const char *name, int fd, const void *buf, size_t buf_size)
+static inline void s2e_decree_read_data_post(struct task_struct *task, const char *name, int fd, const void *buf,
+					     size_t buf_size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_READ_DATA_POST;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.DataPost.fd = fd;
 		cmd.DataPost.buffer = (uintptr_t)buf;
@@ -138,14 +137,12 @@ static inline void s2e_decree_read_data_post(pid_t pid, const char *name, int fd
 	}
 }
 
-static inline int s2e_decree_waitfds(pid_t pid, const char *name, int nfds, int has_timeout, uint64_t tv_sec,
-				     uint64_t tv_nsec, int *invoke_orig)
+static inline int s2e_decree_waitfds(struct task_struct *task, const char *name, int nfds, int has_timeout,
+				     uint64_t tv_sec, uint64_t tv_nsec, int *invoke_orig)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_FD_WAIT;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.FDWait.has_timeout = has_timeout;
 		cmd.FDWait.tv_sec = tv_sec;
@@ -164,13 +161,11 @@ static inline int s2e_decree_waitfds(pid_t pid, const char *name, int nfds, int 
 	}
 }
 
-static inline void s2e_decree_random(pid_t pid, const char *name, void *buf, size_t buf_size)
+static inline void s2e_decree_random(struct task_struct *task, const char *name, void *buf, size_t buf_size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_RANDOM;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.Random.buffer = (uintptr_t)buf;
 		cmd.Random.buffer_size = buf_size;
@@ -180,13 +175,11 @@ static inline void s2e_decree_random(pid_t pid, const char *name, void *buf, siz
 	}
 }
 
-static inline int s2e_get_cfg_bool(pid_t pid, const char *name, char *key)
+static inline int s2e_get_cfg_bool(struct task_struct *task, const char *name, char *key)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_GET_CFG_BOOL;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.GetCfgBool.key_addr = (uintptr_t)key;
 
@@ -199,13 +192,12 @@ static inline int s2e_get_cfg_bool(pid_t pid, const char *name, char *key)
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_allocate_size(pid_t pid, const char *name, unsigned long *size)
+static inline void s2e_decree_handle_symbolic_allocate_size(struct task_struct *task, const char *name,
+							    unsigned long *size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_HANDLE_SYMBOLIC_ALLOCATE_SIZE;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.SymbolicSize.size_addr = (uintptr_t)size;
 
@@ -214,13 +206,12 @@ static inline void s2e_decree_handle_symbolic_allocate_size(pid_t pid, const cha
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_transmit_buffer(pid_t pid, const char *name, void **buf, size_t *size)
+static inline void s2e_decree_handle_symbolic_transmit_buffer(struct task_struct *task, const char *name, void **buf,
+							      size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_HANDLE_SYMBOLIC_TRANSMIT_BUFFER;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.SymbolicBuffer.ptr_addr = (uintptr_t)buf;
 		cmd.SymbolicBuffer.size_addr = (uintptr_t)size;
@@ -231,13 +222,12 @@ static inline void s2e_decree_handle_symbolic_transmit_buffer(pid_t pid, const c
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_receive_buffer(pid_t pid, const char *name, void **buf, size_t *size)
+static inline void s2e_decree_handle_symbolic_receive_buffer(struct task_struct *task, const char *name, void **buf,
+							     size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_HANDLE_SYMBOLIC_RECEIVE_BUFFER;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.SymbolicBuffer.ptr_addr = (uintptr_t)buf;
 		cmd.SymbolicBuffer.size_addr = (uintptr_t)size;
@@ -248,13 +238,12 @@ static inline void s2e_decree_handle_symbolic_receive_buffer(pid_t pid, const ch
 	}
 }
 
-static inline void s2e_decree_handle_symbolic_random_buffer(pid_t pid, const char *name, void **buf, size_t *size)
+static inline void s2e_decree_handle_symbolic_random_buffer(struct task_struct *task, const char *name, void **buf,
+							    size_t *size)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_HANDLE_SYMBOLIC_RANDOM_BUFFER;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.SymbolicBuffer.ptr_addr = (uintptr_t)buf;
 		cmd.SymbolicBuffer.size_addr = (uintptr_t)size;
@@ -265,14 +254,12 @@ static inline void s2e_decree_handle_symbolic_random_buffer(pid_t pid, const cha
 	}
 }
 
-static inline void s2e_decree_copy_to_user(pid_t pid, const char *name, void *to, const void *from, long n, int done,
-					   long ret)
+static inline void s2e_decree_copy_to_user(struct task_struct *task, const char *name, void *to, const void *from,
+					   long n, int done, long ret)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 		cmd.Command = DECREE_COPY_TO_USER;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.CopyToUser.user_addr = (uintptr_t)to;
 		cmd.CopyToUser.addr = (uintptr_t)from;
@@ -303,13 +290,13 @@ static inline uint64_t s2e_vm_flags(unsigned long vm_flags)
 	return f;
 }
 
-static inline void s2e_decree_update_memory_map(pid_t pid, const char *name, struct mm_struct *mm)
+static inline void s2e_decree_update_memory_map(struct task_struct *task, const char *name, struct mm_struct *mm)
 {
 	if (s2e_decree_monitor_enabled) {
 		int vm_count, i;
 		struct vm_area_struct *vma;
 		struct S2E_DECREEMON_VMA *data;
-		struct S2E_DECREEMON_COMMAND cmd = {0};
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 
 		down_read(&mm->mmap_sem);
 		vm_count = 0;
@@ -332,9 +319,7 @@ static inline void s2e_decree_update_memory_map(pid_t pid, const char *name, str
 		}
 		up_read(&mm->mmap_sem);
 
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
 		cmd.Command = DECREE_UPDATE_MEMORY_MAP;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 		cmd.UpdateMemoryMap.count = vm_count;
 		cmd.UpdateMemoryMap.buffer = (uintptr_t)data;
@@ -346,15 +331,13 @@ static inline void s2e_decree_update_memory_map(pid_t pid, const char *name, str
 	}
 }
 
-static inline void s2e_decree_do_set_args(pid_t pid, const char *name,
+static inline void s2e_decree_do_set_args(struct task_struct *task, const char *name,
 					  struct S2E_DECREEMON_COMMAND_SET_CB_PARAMS *params)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 
 		cmd.Command = DECREE_SET_CB_PARAMS;
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
-		cmd.currentPid = pid;
 		strncpy(cmd.currentName, name, sizeof(cmd.currentName));
 
 		cmd.CbParams = *params;
@@ -365,32 +348,43 @@ static inline void s2e_decree_do_set_args(pid_t pid, const char *name,
 	}
 }
 
-static inline void s2e_decree_init(uint64_t page_offset, uint64_t start_kernel, uint64_t task_struct_pid_offset)
+static inline void s2e_decree_init(struct task_struct *task, uint64_t page_offset, uint64_t start_kernel)
 {
 	if (s2e_decree_monitor_enabled) {
-		struct S2E_DECREEMON_COMMAND cmd = {0};
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 
 		cmd.Command = DECREE_INIT;
-		cmd.version = S2E_DECREEMON_COMMAND_VERSION;
-		cmd.currentPid = -1;
 		cmd.Init.page_offset = page_offset;
 		cmd.Init.start_kernel = start_kernel;
-		cmd.Init.task_struct_pid_offset = task_struct_pid_offset;
 
 		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
 	}
 }
 
-static inline void s2e_decree_kernel_panic(const char *msg, unsigned msg_size)
+static inline void s2e_decree_kernel_panic(struct task_struct *task, const char *msg, unsigned msg_size)
 {
-	struct S2E_DECREEMON_COMMAND cmd = {0};
-	cmd.version = S2E_DECREEMON_COMMAND_VERSION;
+	struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(task);
 	cmd.Command = DECREE_KERNEL_PANIC;
-	cmd.currentPid = -1;
 	cmd.Panic.message = (uintptr_t)msg;
 	cmd.Panic.message_size = msg_size;
 
 	s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
+}
+
+static inline void s2e_decree_task_switch(struct task_struct *prev, struct task_struct *next)
+{
+	if (s2e_decree_monitor_enabled) {
+		struct S2E_DECREEMON_COMMAND cmd = s2e_decree_init_cmd(current);
+		cmd.Command = DECREE_TASK_SWITCH;
+		cmd.TaskSwitch.prev.task_struct = (uintptr_t)prev;
+		cmd.TaskSwitch.prev.pid = prev->pid;
+		cmd.TaskSwitch.prev.tgid = prev->tgid;
+		cmd.TaskSwitch.next.task_struct = (uintptr_t)next;
+		cmd.TaskSwitch.next.pid = next->pid;
+		cmd.TaskSwitch.next.tgid = next->tgid;
+
+		s2e_invoke_plugin("DecreeMonitor", &cmd, sizeof(cmd));
+	}
 }
 
 #endif
