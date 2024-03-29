@@ -63,6 +63,10 @@
 
 #include "process.h"
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 /* Prints also some state that isn't saved in the pt_regs */
 void __show_regs(struct pt_regs *regs, enum show_regs_mode mode,
 		 const char *log_lvl)
@@ -660,6 +664,10 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 
 	/* Load the Intel cache allocation PQR MSR. */
 	resctrl_sched_in(next_p);
+
+#ifdef CONFIG_S2E
+	s2e_linux_task_switch(prev_p, next_p);
+#endif
 
 	return prev_p;
 }

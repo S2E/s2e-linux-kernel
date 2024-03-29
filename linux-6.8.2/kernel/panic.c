@@ -38,6 +38,10 @@
 #include <trace/events/error_report.h>
 #include <asm/sections.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #define PANIC_TIMER_STEP 100
 #define PANIC_BLINK_SPD 18
 
@@ -334,6 +338,12 @@ void panic(const char *fmt, ...)
 
 	if (len && buf[len - 1] == '\n')
 		buf[len - 1] = '\0';
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+		s2e_linux_kernel_panic(buf, sizeof(buf));
+	}
+#endif
 
 	pr_emerg("Kernel panic - not syncing: %s\n", buf);
 #ifdef CONFIG_DEBUG_BUGVERBOSE

@@ -78,6 +78,11 @@
 
 #include "exit.h"
 
+#ifdef CONFIG_S2E
+#include <s2e/s2e.h>
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 /*
  * The default value should be high enough to not crash a system that randomly
  * crashes its kernel from time to time, but low enough to at least not permit
@@ -917,6 +922,20 @@ void __noreturn do_exit(long code)
 		__this_cpu_add(dirty_throttle_leaks, tsk->nr_dirtied);
 	exit_rcu();
 	exit_tasks_rcu_finish();
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+#ifdef CONFIG_DEBUG_S2E
+		s2e_printf("detected process %s exit with code %ld\n",
+			tsk->comm,
+			tsk->exit_code);
+#endif
+		s2e_linux_thread_exit(tsk, tsk->exit_code);
+		if (group_dead) {
+			s2e_linux_process_exit(tsk, tsk->exit_code);
+		}
+	}
+#endif
 
 	lockdep_free_task(tsk);
 	do_task_dead();

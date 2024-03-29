@@ -58,6 +58,10 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #ifndef arch_mmap_check
 #define arch_mmap_check(addr, len, flags)	(0)
 #endif
@@ -2317,6 +2321,12 @@ static void unmap_region(struct mm_struct *mm, struct ma_state *mas,
 				 next ? next->vm_start : USER_PGTABLES_CEILING,
 				 mm_wr_locked);
 	tlb_finish_mmu(&tlb);
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+		s2e_linux_unmap(current, start, end);
+	}
+#endif
 }
 
 /*

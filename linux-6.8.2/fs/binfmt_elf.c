@@ -50,6 +50,11 @@
 #include <asm/param.h>
 #include <asm/page.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#include <s2e/s2e.h>
+#endif
+
 #ifndef ELF_COMPAT
 #define ELF_COMPAT 0
 #endif
@@ -355,13 +360,27 @@ create_elf_tables(struct linux_binprm *bprm, const struct elfhdr *exec,
  */
 static unsigned long elf_map(struct file *filep, unsigned long addr,
 		const struct elf_phdr *eppnt, int prot, int type,
-		unsigned long total_size)
+		unsigned long total_size
+#ifdef CONFIG_S2E
+		, struct S2E_LINUXMON_COMMAND_MEMORY_MAP *mmap_desc
+#endif		
+)
 {
 	unsigned long map_addr;
 	unsigned long size = eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr);
 	unsigned long off = eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr);
 	addr = ELF_PAGESTART(addr);
 	size = ELF_PAGEALIGN(size);
+
+#ifdef CONFIG_S2E
+	if (mmap_desc) {
+		mmap_desc->address = addr;
+		mmap_desc->size = size;
+		mmap_desc->prot = prot;
+		mmap_desc->flag = type;
+		mmap_desc->pgoff = off;
+	}
+#endif
 
 	/* mmap() will return -EINVAL if given a zero size, but a
 	 * segment with zero filesize is perfectly valid */
@@ -399,13 +418,22 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
  */
 static unsigned long elf_load(struct file *filep, unsigned long addr,
 		const struct elf_phdr *eppnt, int prot, int type,
-		unsigned long total_size)
+		unsigned long total_size
+#ifdef CONFIG_S2E
+		, struct S2E_LINUXMON_COMMAND_MEMORY_MAP *mmap_desc
+#endif		
+)
 {
 	unsigned long zero_start, zero_end;
 	unsigned long map_addr;
 
 	if (eppnt->p_filesz) {
-		map_addr = elf_map(filep, addr, eppnt, prot, type, total_size);
+		map_addr = elf_map(
+			filep, addr, eppnt, prot, type, total_size
+#ifdef CONFIG_S2E
+			, mmap_desc
+#endif		
+		);
 		if (BAD_ADDR(map_addr))
 			return map_addr;
 		if (eppnt->p_memsz > eppnt->p_filesz) {
@@ -628,7 +656,12 @@ static inline int make_prot(u32 p_flags, struct arch_elf_state *arch_state,
    is only provided so that we can read a.out libraries that have
    an ELF header */
 
-static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
+static unsigned long load_elf_interp(
+#ifdef CONFIG_S2E
+		const char *elf_interpreter,
+#endif
+
+		struct elfhdr *interp_elf_ex,
 		struct file *interpreter,
 		unsigned long no_base, struct elf_phdr *interp_elf_phdata,
 		struct arch_elf_state *arch_state)
@@ -639,6 +672,11 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 	unsigned long error = ~0UL;
 	unsigned long total_size;
 	int i;
+#ifdef CONFIG_S2E
+	struct S2E_LINUXMON_PHDR_DESC *elf_phdr = NULL;
+	size_t elf_phdr_size;
+#endif
+
 
 	/* First of all, some simple consistency checks */
 	if (interp_elf_ex->e_type != ET_EXEC &&
@@ -657,8 +695,31 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 		goto out;
 	}
 
+#ifdef CONFIG_S2E
+	elf_phdr_size = sizeof(*elf_phdr) * interp_elf_ex->e_phnum;
+	elf_phdr = kmalloc(elf_phdr_size, GFP_KERNEL);
+	if (!elf_phdr) {
+		error = -ENOMEM;
+		goto out;
+	}
+	memset(elf_phdr, 0, elf_phdr_size);
+#endif
+
 	eppnt = interp_elf_phdata;
 	for (i = 0; i < interp_elf_ex->e_phnum; i++, eppnt++) {
+#ifdef CONFIG_S2E
+		struct S2E_LINUXMON_PHDR_DESC *s2e_ppnt = &elf_phdr[i];
+		s2e_ppnt->index = i;
+		s2e_ppnt->p_type = eppnt->p_type;
+		s2e_ppnt->p_offset = eppnt->p_offset;
+		s2e_ppnt->p_vaddr = eppnt->p_vaddr;
+		s2e_ppnt->p_paddr = eppnt->p_paddr;
+		s2e_ppnt->p_filesz = eppnt->p_filesz;
+		s2e_ppnt->p_memsz = eppnt->p_memsz;
+		s2e_ppnt->p_flags = eppnt->p_flags;
+		s2e_ppnt->p_align = eppnt->p_align;
+#endif
+
 		if (eppnt->p_type == PT_LOAD) {
 			int elf_type = MAP_PRIVATE;
 			int elf_prot = make_prot(eppnt->p_flags, arch_state,
@@ -672,12 +733,22 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 			else if (no_base && interp_elf_ex->e_type == ET_DYN)
 				load_addr = -vaddr;
 
+#ifdef CONFIG_S2E
+			map_addr = elf_load(interpreter, load_addr + vaddr,
+					eppnt, elf_prot, elf_type, total_size, &s2e_ppnt->mmap);
+#else
 			map_addr = elf_load(interpreter, load_addr + vaddr,
 					eppnt, elf_prot, elf_type, total_size);
+#endif
+
 			total_size = 0;
 			error = map_addr;
 			if (BAD_ADDR(map_addr))
 				goto out;
+
+#ifdef CONFIG_S2E
+			s2e_ppnt->vma = map_addr;
+#endif
 
 			if (!load_addr_set &&
 			    interp_elf_ex->e_type == ET_DYN) {
@@ -702,7 +773,28 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 	}
 
 	error = load_addr;
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+		s2e_printf("elf_interpreter=%s "
+			   "elf_entry=%#lx interp_load_addr=%#lx\n",
+			   elf_interpreter, load_addr,
+			   load_addr);
+
+		s2e_linux_module_load(elf_interpreter, current,
+				      interp_elf_ex->e_entry, elf_phdr,
+				      elf_phdr_size);
+	}
+#endif
+
 out:
+
+#ifdef CONFIG_S2E
+	if (elf_phdr) {
+		kfree(elf_phdr);
+	}
+#endif
+
 	return error;
 }
 
@@ -824,6 +916,11 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	unsigned long error;
 	struct elf_phdr *elf_ppnt, *elf_phdata, *interp_elf_phdata = NULL;
 	struct elf_phdr *elf_property_phdata = NULL;
+#ifdef CONFIG_S2E
+	struct S2E_LINUXMON_PHDR_DESC *elf_phdr = NULL;
+	size_t elf_phdr_size;
+	char *s2e_elf_interpreter = NULL;
+#endif
 	unsigned long elf_brk;
 	int retval, i;
 	unsigned long elf_entry;
@@ -837,6 +934,12 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	struct arch_elf_state arch_state = INIT_ARCH_ELF_STATE;
 	struct mm_struct *mm;
 	struct pt_regs *regs;
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+		s2e_linux_process_load(current, bprm->interp);
+	}
+#endif
 
 	retval = -ENOEXEC;
 	/* First of all, some simple consistency checks */
@@ -855,6 +958,17 @@ static int load_elf_binary(struct linux_binprm *bprm)
 	elf_phdata = load_elf_phdrs(elf_ex, bprm->file);
 	if (!elf_phdata)
 		goto out;
+
+#ifdef CONFIG_S2E
+	elf_phdr_size = sizeof(*elf_phdr) * elf_ex->e_phnum;
+	elf_phdr = kmalloc(elf_phdr_size, GFP_KERNEL);
+	if (!elf_phdr) {
+		retval = -ENOMEM;
+		goto out;
+	}
+
+	memset(elf_phdr, 0, elf_phdr_size);
+#endif
 
 	elf_ppnt = elf_phdata;
 	for (i = 0; i < elf_ex->e_phnum; i++, elf_ppnt++) {
@@ -889,6 +1003,14 @@ static int load_elf_binary(struct linux_binprm *bprm)
 		retval = -ENOEXEC;
 		if (elf_interpreter[elf_ppnt->p_filesz - 1] != '\0')
 			goto out_free_interp;
+
+		#ifdef CONFIG_S2E
+		s2e_elf_interpreter = kmalloc(elf_ppnt->p_filesz, GFP_KERNEL);
+		if (!s2e_elf_interpreter)
+			goto out_free_ph;
+
+		memcpy(s2e_elf_interpreter, elf_interpreter, elf_ppnt->p_filesz);
+		#endif
 
 		interpreter = open_exec(elf_interpreter);
 		kfree(elf_interpreter);
@@ -1031,6 +1153,20 @@ out_free_interp:
 		unsigned long total_size = 0;
 		unsigned long alignment;
 
+#ifdef CONFIG_S2E
+		struct S2E_LINUXMON_PHDR_DESC *s2e_ppnt = &elf_phdr[i];
+		s2e_ppnt->index = i;
+		s2e_ppnt->vma = 0;
+		s2e_ppnt->p_type = elf_ppnt->p_type;
+		s2e_ppnt->p_offset = elf_ppnt->p_offset;
+		s2e_ppnt->p_vaddr = elf_ppnt->p_vaddr;
+		s2e_ppnt->p_paddr = elf_ppnt->p_paddr;
+		s2e_ppnt->p_filesz = elf_ppnt->p_filesz;
+		s2e_ppnt->p_memsz = elf_ppnt->p_memsz;
+		s2e_ppnt->p_flags = elf_ppnt->p_flags;
+		s2e_ppnt->p_align = elf_ppnt->p_align;
+#endif
+
 		if (elf_ppnt->p_type != PT_LOAD)
 			continue;
 
@@ -1130,12 +1266,20 @@ out_free_interp:
 		}
 
 		error = elf_load(bprm->file, load_bias + vaddr, elf_ppnt,
-				elf_prot, elf_flags, total_size);
+				elf_prot, elf_flags, total_size
+#ifdef CONFIG_S2E
+				, &s2e_ppnt->mmap
+#endif
+		);
 		if (BAD_ADDR(error)) {
 			retval = IS_ERR_VALUE(error) ?
 				PTR_ERR((void*)error) : -EINVAL;
 			goto out_free_dentry;
 		}
+
+#ifdef CONFIG_S2E
+		s2e_ppnt->vma = error;
+#endif
 
 		if (first_pt_load) {
 			first_pt_load = 0;
@@ -1197,10 +1341,14 @@ out_free_interp:
 	current->mm->start_brk = current->mm->brk = ELF_PAGEALIGN(elf_brk);
 
 	if (interpreter) {
-		elf_entry = load_elf_interp(interp_elf_ex,
-					    interpreter,
-					    load_bias, interp_elf_phdata,
-					    &arch_state);
+		elf_entry = load_elf_interp(
+#ifdef CONFIG_S2E
+			s2e_elf_interpreter,
+#endif
+			interp_elf_ex,
+			interpreter,
+			load_bias, interp_elf_phdata,
+			&arch_state);
 		if (!IS_ERR_VALUE(elf_entry)) {
 			/*
 			 * load_elf_interp() returns relocation
@@ -1298,6 +1446,22 @@ out_free_interp:
 	START_THREAD(elf_ex, regs, elf_entry, bprm->p);
 	retval = 0;
 out:
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled && !retval) {
+		s2e_linux_module_load(bprm->interp, current,
+				      elf_ex->e_entry, elf_phdr,
+				      elf_phdr_size);
+	}
+
+	if (elf_phdr)
+		kfree(elf_phdr);
+
+	if (s2e_elf_interpreter) {
+		kfree(s2e_elf_interpreter);
+	}
+#endif
+
 	return retval;
 
 	/* error cleanup */
@@ -1368,7 +1532,11 @@ static int load_elf_library(struct file *file)
 			eppnt,
 			PROT_READ | PROT_WRITE | PROT_EXEC,
 			MAP_FIXED_NOREPLACE | MAP_PRIVATE,
-			0);
+			0
+			#if CONFIG_S2E
+			,NULL
+			#endif
+			);
 
 	if (error != ELF_PAGESTART(eppnt->p_vaddr))
 		goto out_free_ph;

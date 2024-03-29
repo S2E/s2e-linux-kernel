@@ -26,6 +26,10 @@
 
 #include <linux/uaccess.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #include "internal.h"
 #include "swap.h"
 
@@ -560,6 +564,13 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 		if (populate)
 			mm_populate(ret, populate);
 	}
+	
+	#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled && (ret != -1)) {
+		s2e_linux_mmap(current, ret, len, prot, flag, pgoff);
+	}
+#endif
+	
 	return ret;
 }
 

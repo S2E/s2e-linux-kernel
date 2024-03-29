@@ -36,12 +36,12 @@
 #ifndef S2E_CUSTOM_INSTRUCTIONS_H
 #define S2E_CUSTOM_INSTRUCTIONS_H
 
-#include <stdarg.h>
-
 #ifdef __KERNEL__
 #include <linux/types.h>
+#include <linux/stdarg.h>
 #else
 #include <inttypes.h>
+#include <stdarg.h>
 #endif
 
 #include "opcodes.h"
